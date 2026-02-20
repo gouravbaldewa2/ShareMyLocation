@@ -1,0 +1,5 @@
+# Ignore local dev files
+.env.local
+.env.development
+node_modules/
+dist/
