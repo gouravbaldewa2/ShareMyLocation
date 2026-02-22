@@ -1,0 +1,51 @@
+# Orbit Future Requirements & Considerations
+
+This document captures features and technical requirements that were discussed and analyzed but not implemented in the MVP release. This serves as a backlog and architectural roadmap for future iterations.
+
+## 1. User Authentication (Google/Gmail Sign-in)
+
+**Current State:**
+The app currently operates with zero friction. Users do not need an account to share their location or view a fleet. It relies on anonymous sessions and local storage (`SharedPreferences`) for active shares. The database (`Location`, `Fleet`, `Vehicle`) has no concept of a `User`.
+
+**Future Requirement:**
+Implement Google Sign-in to provide persistent identity and advanced access control.
+
+**Why it was considered:**
+- **Persistent Identity:** If a user uninstalls the app or switches devices, they currently lose access to manage their active fleets. Accounts solve this.
+- **Access Control:** Allows for strictly private fleets (e.g., restricted to specific email addresses) instead of relying solely on unguessable links.
+- **Monetization:** Required for attaching subscriptions to "Premium" fleet tiers.
+
+**Implementation Approach:**
+- **UX Strategy:** Use "Progressive Onboarding." Do not force sign-in immediately. Let users create an anonymous share first, then prompt them to sign in to save it permanently.
+- **Backend/DB:**
+  - Create a `users` table (`id`, `email`, `name`, `googleId`, `avatarUrl`) in `shared/schema.ts`.
+  - Add optional `userId` foreign key to `Location` and `Fleet` tables.
+  - Implement a backend authentication layer (e.g., using Passport.js with Google OAuth20 strategy, Clerk, or Supabase).
+  - Use secure session management (cookies or JWT).
+- **Mobile Client:**
+  - Integrate `google_sign_in` and optionally `firebase_auth` packages.
+  - Append secure auth tokens in headers for authenticated API requests.
+
+## 2. Advanced Map & Viewer Features
+
+**Current State:**
+The recipient web view and fleet manager show live pulsing dots for vehicles and offer quick actions (Google Maps links).
+
+**Future Requirements:**
+- **Distance & ETA:** Calculate and display the distance and estimated time of arrival between the viewer and the shared location.
+- **Historical Trails (Breadcrumbs):** Show the recent path of the vehicle, not just the current live point.
+- **Visual Distinction:** Better visual indicators (colors, icons) for different vehicles within a single fleet view.
+- **Geofencing & Alerts:** Allow users to set boundaries and receive push notifications when a vehicle enters or exits a predefined zone.
+
+## 3. Background Location Tracking
+
+**Current State:**
+The app relies on a foreground location stream. If the app is killed or fully suspended by the OS, location updates may stop.
+
+**Future Requirements:**
+Implement robust background location tracking (Foreground Service on Android, Background Modes on iOS) to ensure uninterrupted sharing during long trips.
+
+**Implementation Approach:**
+- Re-introduce `flutter_background_service` or similar native integrations.
+- Carefully manage OS-level battery optimizations and permissions.
+- Ensure aggressive error handling to prevent the previously encountered silent crashes.

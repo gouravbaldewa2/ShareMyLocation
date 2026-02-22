@@ -1,9 +1,9 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { 
-  insertLocationSchema, 
+import {
+  insertLocationSchema,
   locationUpdateSchema,
   insertFleetSchema,
   insertVehicleSchema,
@@ -40,14 +40,14 @@ export async function registerRoutes(
           // Viewer subscribing to location updates
           const locId: string = message.locationId;
           subscribedLocationId = locId;
-          
+
           if (!locationSubscribers.has(locId)) {
             locationSubscribers.set(locId, new Set());
           }
           locationSubscribers.get(locId)!.add(ws);
-          
+
           log(`Viewer subscribed to location ${locId}`, "websocket");
-          
+
           // Send current location immediately
           const location = await storage.getLocation(locId);
           if (location) {
@@ -86,7 +86,7 @@ export async function registerRoutes(
               longitude: location.longitude,
             });
           }
-          
+
           // Notify subscribers
           const subscribers = locationSubscribers.get(sharingLocationId);
           if (subscribers) {
@@ -97,23 +97,23 @@ export async function registerRoutes(
               }
             });
           }
-          
+
           sharerConnections.delete(sharingLocationId);
           sharingLocationId = null;
         }
-        
+
         // Fleet-related messages
         else if (message.type === "subscribeFleet" && message.fleetId) {
           const fleetId: string = message.fleetId;
           subscribedFleetId = fleetId;
-          
+
           if (!fleetSubscribers.has(fleetId)) {
             fleetSubscribers.set(fleetId, new Set());
           }
           fleetSubscribers.get(fleetId)!.add(ws);
-          
+
           log(`Viewer subscribed to fleet ${fleetId}`, "websocket");
-          
+
           // Send current vehicles immediately
           const vehicles = await storage.getVehiclesByFleet(fleetId);
           ws.send(JSON.stringify({ type: "vehicles", data: vehicles }));
@@ -122,10 +122,10 @@ export async function registerRoutes(
           const vehicleId: string = message.vehicleId;
           sharingVehicleId = vehicleId;
           vehicleSharerConnections.set(vehicleId, ws);
-          
+
           // Mark vehicle as live
           await storage.updateVehicleLiveStatus(vehicleId, true);
-          
+
           log(`Vehicle ${vehicleId} started sharing`, "websocket");
         } else if (message.type === "updateVehicle" && sharingVehicleId) {
           // Vehicle sending location update
@@ -151,7 +151,7 @@ export async function registerRoutes(
           const vehicle = await storage.getVehicle(sharingVehicleId);
           if (vehicle) {
             await storage.updateVehicleLiveStatus(sharingVehicleId, false);
-            
+
             // Notify fleet subscribers
             const subscribers = fleetSubscribers.get(vehicle.fleetId);
             if (subscribers) {
@@ -163,7 +163,7 @@ export async function registerRoutes(
               });
             }
           }
-          
+
           vehicleSharerConnections.delete(sharingVehicleId);
           sharingVehicleId = null;
         }
@@ -183,7 +183,7 @@ export async function registerRoutes(
           }
         }
       }
-      
+
       // Clean up sharer and notify subscribers
       if (sharingLocationId) {
         sharerConnections.delete(sharingLocationId);
@@ -198,7 +198,7 @@ export async function registerRoutes(
         }
         log(`Sharer disconnected from location ${sharingLocationId}`, "websocket");
       }
-      
+
       // Clean up fleet subscriber
       if (subscribedFleetId) {
         const subscribers = fleetSubscribers.get(subscribedFleetId);
@@ -209,13 +209,13 @@ export async function registerRoutes(
           }
         }
       }
-      
+
       // Clean up vehicle sharer
       if (sharingVehicleId) {
         const vehicle = await storage.getVehicle(sharingVehicleId);
         if (vehicle) {
           await storage.updateVehicleLiveStatus(sharingVehicleId, false);
-          
+
           // Notify fleet subscribers
           const subscribers = fleetSubscribers.get(vehicle.fleetId);
           if (subscribers) {
@@ -231,6 +231,54 @@ export async function registerRoutes(
         log(`Vehicle ${sharingVehicleId} disconnected`, "websocket");
       }
     });
+  });
+
+  // Serve Android App Links verification file
+  app.get("/.well-known/assetlinks.json", (req: Request, res: Response) => {
+    res.json([{
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: {
+        namespace: "android_app",
+        package_name: "com.sharemylocation.app",
+        sha256_cert_fingerprints: [
+          "23:7F:3E:DD:0F:28:C0:27:A5:0C:2D:9A:DF:F8:42:52:D8:41:F5:CE:EE:B9:04:FB:83:DF:05:3A:B5:8F:82:BA"
+        ]
+      }
+    }]);
+  });
+
+  // Deep Link Web Fallback for /share/:code
+  app.get("/share/:code", (req: Request, res: Response) => {
+    const code = req.params.code;
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Join Fleet on Orbit</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta property="og:title" content="Join Fleet on Orbit" />
+        <meta property="og:description" content="You've been invited to track a fleet's live location. Install Orbit to join." />
+        <meta property="og:image" content="https://sharemylocation-production.up.railway.app/orbit_icon.png" />
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #0F0F14; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+          .container { max-width: 400px; padding: 24px; }
+          h1 { color: #00B4D8; margin-bottom: 8px; }
+          p { color: #888; margin-bottom: 32px; line-height: 1.5; }
+          .btn { background-color: #00B4D8; color: #0F0F14; padding: 16px 32px; border-radius: 30px; text-decoration: none; font-weight: bold; font-size: 18px; display: inline-block; transition: transform 0.2s; }
+          .btn:hover { transform: scale(1.05); }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>Orbit</h1>
+          <p>You've been invited to track a fleet's live location. Install Orbit to join.</p>
+          <a class="btn" href="https://play.google.com/store/apps/details?id=com.sharemylocation.app&referrer=fleetCode%3D${code}">
+            Download Orbit
+          </a>
+        </div>
+      </body>
+      </html>
+    `);
   });
 
   // Create a new shared location
@@ -292,7 +340,7 @@ export async function registerRoutes(
       }
 
       const fleet = await storage.createFleet(parsed.data);
-      return res.status(201).json(fleet);
+      return res.status(201).json({ ...fleet, vehicles: [] });
     } catch (error) {
       console.error("Error creating fleet:", error);
       return res.status(500).json({ error: "Failed to create fleet" });
@@ -308,9 +356,11 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Fleet not found or expired" });
       }
 
+      const vehicles = await storage.getVehiclesByFleet(id);
+
       // Don't expose adminCode in public endpoint
       const { adminCode, ...publicFleet } = fleet;
-      return res.json(publicFleet);
+      return res.json({ ...publicFleet, vehicles });
     } catch (error) {
       console.error("Error fetching fleet:", error);
       return res.status(500).json({ error: "Failed to fetch fleet" });
@@ -326,10 +376,30 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Fleet not found or expired" });
       }
 
-      return res.json(fleet);
+      const vehicles = await storage.getVehiclesByFleet(fleet.id);
+
+      return res.json({ ...fleet, vehicles });
     } catch (error) {
       console.error("Error fetching fleet:", error);
       return res.status(500).json({ error: "Failed to fetch fleet" });
+    }
+  });
+
+  app.delete("/api/fleets/admin/:adminCode", async (req, res) => {
+    try {
+      const { adminCode } = req.params;
+      const fleet = await storage.getFleetByAdminCode(adminCode);
+
+      if (!fleet) {
+        return res.status(404).json({ error: "Fleet not found or expired" });
+      }
+
+      await storage.deleteFleet(fleet.id);
+
+      return res.json({ success: true, message: "Fleet deleted" });
+    } catch (error) {
+      console.error("Error deleting fleet:", error);
+      return res.status(500).json({ error: "Failed to delete fleet" });
     }
   });
 

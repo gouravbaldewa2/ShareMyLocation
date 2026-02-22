@@ -1,4 +1,4 @@
-import { 
+import {
   type Location, type InsertLocation, type LocationUpdate,
   type Fleet, type InsertFleet, type Vehicle, type InsertVehicle, type VehicleUpdate
 } from "@shared/schema";
@@ -16,22 +16,24 @@ const VEHICLE_COLORS = [
 ];
 
 export interface IStorage {
+  // Location methods
   getLocation(id: string): Promise<Location | undefined>;
   createLocation(location: InsertLocation): Promise<Location>;
   updateLocation(id: string, update: LocationUpdate): Promise<Location | undefined>;
   deleteLocation(id: string): Promise<boolean>;
-  
+
   // Fleet methods
   getFleet(id: string): Promise<Fleet | undefined>;
   getFleetByAdminCode(adminCode: string): Promise<Fleet | undefined>;
   createFleet(fleet: InsertFleet): Promise<Fleet>;
-  
+  deleteFleet(id: string): Promise<boolean>;
+
   // Vehicle methods
   getVehicle(id: string): Promise<Vehicle | undefined>;
   getVehicleByShareCode(shareCode: string): Promise<Vehicle | undefined>;
   getVehiclesByFleet(fleetId: string): Promise<Vehicle[]>;
   createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
-  updateVehicle(id: string, update: VehicleUpdate): Promise<Vehicle | undefined>;
+  updateVehicle(id: string, update: LocationUpdate): Promise<Vehicle | undefined>;
   updateVehicleLiveStatus(id: string, isLive: boolean): Promise<Vehicle | undefined>;
   deleteVehicle(id: string): Promise<boolean>;
 }
@@ -154,6 +156,20 @@ export class MemStorage implements IStorage {
     return fleet;
   }
 
+  async deleteFleet(id: string): Promise<boolean> {
+    const deleted = this.fleets.delete(id);
+    if (deleted) {
+      // Also delete associated vehicles
+      const vehicleEntries = Array.from(this.vehicles.entries());
+      for (const [vehicleId, vehicle] of vehicleEntries) {
+        if (vehicle.fleetId === id) {
+          this.vehicles.delete(vehicleId);
+        }
+      }
+    }
+    return deleted;
+  }
+
   // Vehicle methods
   async getVehicle(id: string): Promise<Vehicle | undefined> {
     return this.vehicles.get(id);
@@ -181,11 +197,11 @@ export class MemStorage implements IStorage {
   async createVehicle(insertVehicle: InsertVehicle): Promise<Vehicle> {
     const id = nanoid(10);
     const shareCode = nanoid(12);
-    
+
     // Get existing vehicles to determine color
     const existingVehicles = await this.getVehiclesByFleet(insertVehicle.fleetId);
     const colorIndex = existingVehicles.length % VEHICLE_COLORS.length;
-    
+
     const vehicle: Vehicle = {
       id,
       fleetId: insertVehicle.fleetId,
