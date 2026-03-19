@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+// User schema for Google OAuth
+export const userSchema = z.object({
+  id: z.string(),
+  googleId: z.string(),
+  email: z.string().email(),
+  name: z.string(),
+  avatarUrl: z.string().optional(),
+  createdAt: z.string(),
+});
+
+export type User = z.infer<typeof userSchema>;
+
 export const locationSchema = z.object({
   id: z.string(),
   latitude: z.number(),
