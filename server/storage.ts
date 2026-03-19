@@ -1,6 +1,7 @@
 import {
   type Location, type InsertLocation, type LocationUpdate,
-  type Fleet, type InsertFleet, type Vehicle, type InsertVehicle, type VehicleUpdate
+  type Fleet, type InsertFleet, type Vehicle, type InsertVehicle, type VehicleUpdate,
+  type User
 } from "@shared/schema";
 import { nanoid } from "nanoid";
 
@@ -16,6 +17,11 @@ const VEHICLE_COLORS = [
 ];
 
 export interface IStorage {
+  // User methods
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  getUserById(id: string): Promise<User | undefined>;
+  createUser(user: Omit<User, "id" | "createdAt">): Promise<User>;
+
   // Location methods
   getLocation(id: string): Promise<Location | undefined>;
   createLocation(location: InsertLocation): Promise<Location>;
@@ -42,11 +48,34 @@ export class MemStorage implements IStorage {
   private locations: Map<string, Location>;
   private fleets: Map<string, Fleet>;
   private vehicles: Map<string, Vehicle>;
+  private users: Map<string, User>;
 
   constructor() {
     this.locations = new Map();
     this.fleets = new Map();
     this.vehicles = new Map();
+    this.users = new Map();
+  }
+
+  // User methods
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    const allUsers = Array.from(this.users.values());
+    return allUsers.find((u) => u.googleId === googleId);
+  }
+
+  async getUserById(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async createUser(userData: Omit<User, "id" | "createdAt">): Promise<User> {
+    const id = nanoid(10);
+    const user: User = {
+      ...userData,
+      id,
+      createdAt: new Date().toISOString(),
+    };
+    this.users.set(id, user);
+    return user;
   }
 
   async getLocation(id: string): Promise<Location | undefined> {

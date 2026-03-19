@@ -10,6 +10,7 @@ import {
   vehicleUpdateSchema
 } from "@shared/schema";
 import { log } from "./index";
+import { requireAuth } from "./auth";
 
 // Track WebSocket connections by location ID
 const locationSubscribers = new Map<string, Set<WebSocket>>();
@@ -331,8 +332,8 @@ export async function registerRoutes(
     }
   });
 
-  // Fleet routes
-  app.post("/api/fleets", async (req, res) => {
+  // Fleet routes — requires login to create
+  app.post("/api/fleets", requireAuth, async (req, res) => {
     try {
       const parsed = insertFleetSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -385,9 +386,9 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/fleets/admin/:adminCode", async (req, res) => {
+  app.delete("/api/fleets/admin/:adminCode", requireAuth, async (req, res) => {
     try {
-      const { adminCode } = req.params;
+      const adminCode = req.params.adminCode as string;
       const fleet = await storage.getFleetByAdminCode(adminCode);
 
       if (!fleet) {
