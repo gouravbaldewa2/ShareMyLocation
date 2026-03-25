@@ -17,19 +17,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<Map<String, dynamic>> _onboardingData = [
     {
       'title': 'Live Location\nSharing',
-      'subtitle': 'Share your secure live location with an expiring link for up to 24 hours.',
+      'subtitle':
+          'Share your secure live location with an expiring link for up to 24 hours.',
       'icon': Icons.share_location_rounded,
       'color': const Color(0xFF00B4D8),
     },
     {
       'title': 'Fleet Tracking',
-      'subtitle': 'Create fleets and monitor multiple vehicles simultaneously on a single live dashboard.',
+      'subtitle':
+          'Create fleets and monitor multiple vehicles simultaneously on a single live dashboard.',
       'icon': Icons.directions_car_rounded,
       'color': const Color(0xFF9B59B6),
     },
     {
       'title': 'Easy Guest\nAccess',
-      'subtitle': 'Clients can view live vehicle progress directly through a simple share link without logging in.',
+      'subtitle':
+          'Clients can view live vehicle progress directly through a simple share link without logging in.',
       'icon': Icons.public_rounded,
       'color': const Color(0xFF00B4D8),
     },
@@ -118,11 +121,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   color: data['color'].withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  data['icon'],
-                  size: 80,
-                  color: data['color'],
-                ),
+                child: Icon(data['icon'], size: 80, color: data['color']),
               ),
             ),
           ),
@@ -195,11 +194,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     color: color.withOpacity(0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
-                  )
+                  ),
                 ],
               ),
               child: Text(
-                _currentPage == _onboardingData.length - 1 ? 'Get Started' : 'Next \u2192',
+                _currentPage == _onboardingData.length - 1
+                    ? 'Get Started'
+                    : 'Next \u2192',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,

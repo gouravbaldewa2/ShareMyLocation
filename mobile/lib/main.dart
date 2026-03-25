@@ -134,22 +134,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
         final referrerDetails = await PlayInstallReferrer.installReferrer;
         final referrer = referrerDetails.installReferrer;
-        
+
         if (referrer != null && referrer.isNotEmpty) {
-           final decodedReferrer = Uri.decodeFull(referrer);
-           final uri = Uri.parse('http://dummy.com?$decodedReferrer');
-           
-           if (uri.queryParameters.containsKey('fleetCode')) {
-              final code = uri.queryParameters['fleetCode'];
-              if (code != null && code.isNotEmpty && mounted) {
-                 context.push('/guest_fleet/$code');
-              }
-           } else if (uri.queryParameters.containsKey('shareCode')) {
-              final code = uri.queryParameters['shareCode'];
-              if (code != null && code.isNotEmpty && mounted) {
-                 context.push('/vehicle/share/$code');
-              }
-           }
+          final decodedReferrer = Uri.decodeFull(referrer);
+          final uri = Uri.parse('http://dummy.com?$decodedReferrer');
+
+          if (uri.queryParameters.containsKey('fleetCode')) {
+            final code = uri.queryParameters['fleetCode'];
+            if (code != null && code.isNotEmpty && mounted) {
+              context.push('/guest_fleet/$code');
+            }
+          } else if (uri.queryParameters.containsKey('shareCode')) {
+            final code = uri.queryParameters['shareCode'];
+            if (code != null && code.isNotEmpty && mounted) {
+              context.push('/vehicle/share/$code');
+            }
+          }
         }
         await prefs.setBool('has_checked_referrer', true);
       }
@@ -168,16 +168,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                'assets/icon.png',
-                width: 32,
-                height: 32,
-              ),
+              child: Image.asset('assets/icon.png', width: 32, height: 32),
             ),
             const SizedBox(width: 10),
             Text(
-              _currentIndex == 0 ? 'Orbit' : _currentIndex == 1 ? 'My Orbits' : 'My Fleets',
-              style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 1.2),
+              _currentIndex == 0
+                  ? 'Orbit'
+                  : _currentIndex == 1
+                  ? 'My Orbits'
+                  : 'My Fleets',
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
             ),
           ],
         ),
@@ -215,9 +218,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A24).withOpacity(0.92),
                 borderRadius: BorderRadius.circular(32),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
-                ),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.4),
@@ -316,52 +317,62 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           // Stats Row
           Row(
             children: [
-              Expanded(child: _buildStatCard(
-                title: 'Active Shares',
-                value: _statsLoading ? '...' : '$_activeSharesCount',
-                detail: _activeSharesCount > 0 ? 'Next expiry: $_nearestExpiry' : 'None active',
-                icon: Icons.share_location,
-                color: const Color(0xFF00B4D8),
-                onTap: () => _onTabChanged(1),
-              )),
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Active Shares',
+                  value: _statsLoading ? '...' : '$_activeSharesCount',
+                  detail: _activeSharesCount > 0
+                      ? 'Next expiry: $_nearestExpiry'
+                      : 'None active',
+                  icon: Icons.share_location,
+                  color: const Color(0xFF00B4D8),
+                  onTap: () => _onTabChanged(1),
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard(
-                title: 'Active Fleets',
-                value: _statsLoading ? '...' : '$_activeFleetsCount',
-                detail: '$_liveVehiclesCount live vehicles',
-                icon: Icons.directions_car,
-                color: const Color(0xFF9B59B6),
-                onTap: () => _onTabChanged(2),
-              )),
+              Expanded(
+                child: _buildStatCard(
+                  title: 'Active Fleets',
+                  value: _statsLoading ? '...' : '$_activeFleetsCount',
+                  detail: '$_liveVehiclesCount live vehicles',
+                  icon: Icons.directions_car,
+                  color: const Color(0xFF9B59B6),
+                  onTap: () => _onTabChanged(2),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
           // Quick Actions
           Row(
             children: [
-              Expanded(child: _buildQuickAction(
-                label: 'Share Now',
-                icon: Icons.add_location_alt,
-                color: const Color(0xFF00B4D8),
-                onTap: () async {
-                  HapticFeedback.lightImpact();
-                  await context.push('/share_setup');
-                  _loadDashboardStats();
-                  _sharesKey.currentState?.loadShares();
-                },
-              )),
+              Expanded(
+                child: _buildQuickAction(
+                  label: 'Share Now',
+                  icon: Icons.add_location_alt,
+                  color: const Color(0xFF00B4D8),
+                  onTap: () async {
+                    HapticFeedback.lightImpact();
+                    await context.push('/share_setup');
+                    _loadDashboardStats();
+                    _sharesKey.currentState?.loadShares();
+                  },
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _buildQuickAction(
-                label: 'Create Fleet',
-                icon: Icons.add_circle_outline,
-                color: const Color(0xFF9B59B6),
-                onTap: () async {
-                  HapticFeedback.lightImpact();
-                  await context.push('/create_fleet');
-                  _loadDashboardStats();
-                  _fleetsKey.currentState?.loadFleets();
-                },
-              )),
+              Expanded(
+                child: _buildQuickAction(
+                  label: 'Create Fleet',
+                  icon: Icons.add_circle_outline,
+                  color: const Color(0xFF9B59B6),
+                  onTap: () async {
+                    HapticFeedback.lightImpact();
+                    await context.push('/create_fleet');
+                    _loadDashboardStats();
+                    _fleetsKey.currentState?.loadFleets();
+                  },
+                ),
+              ),
             ],
           ),
         ],

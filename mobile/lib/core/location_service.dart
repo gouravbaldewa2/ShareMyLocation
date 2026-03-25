@@ -10,7 +10,10 @@ class LocationService {
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (context.mounted) {
-        _showLocationSettingsDialog(context, 'Location services are disabled. Please turn on your GPS.');
+        _showLocationSettingsDialog(
+          context,
+          'Location services are disabled. Please turn on your GPS.',
+        );
       }
       return null;
     }
@@ -28,26 +31,37 @@ class LocationService {
 
     if (permission == LocationPermission.deniedForever) {
       if (context.mounted) {
-        _showPermissionSettingsDialog(context, 'Location permissions are permanently denied, we cannot request permissions. Please enable them in app settings.');
+        _showPermissionSettingsDialog(
+          context,
+          'Location permissions are permanently denied, we cannot request permissions. Please enable them in app settings.',
+        );
       }
       return null;
     }
 
     // When we reach here, permissions are granted and we can continue accessing the position of the device.
     try {
-      return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
     } catch (e) {
       return null;
     }
   }
 
-  static void _showLocationSettingsDialog(BuildContext context, String message) {
+  static void _showLocationSettingsDialog(
+    BuildContext context,
+    String message,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1A1A24),
-          title: const Text('Location Services Disabled', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Location Services Disabled',
+            style: TextStyle(color: Colors.white),
+          ),
           content: Text(message, style: const TextStyle(color: Colors.white70)),
           actions: [
             TextButton(
@@ -59,7 +73,10 @@ class LocationService {
                 Navigator.of(context).pop();
                 Geolocator.openLocationSettings();
               },
-              child: const Text('Settings', style: TextStyle(color: Color(0xFF00B4D8))),
+              child: const Text(
+                'Settings',
+                style: TextStyle(color: Color(0xFF00B4D8)),
+              ),
             ),
           ],
         );
@@ -73,7 +90,10 @@ class LocationService {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1A1A24),
-          title: const Text('Permission Required', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Permission Required',
+            style: TextStyle(color: Colors.white),
+          ),
           content: Text(message, style: const TextStyle(color: Colors.white70)),
           actions: [
             TextButton(
@@ -86,13 +106,19 @@ class LocationService {
     );
   }
 
-  static void _showPermissionSettingsDialog(BuildContext context, String message) {
+  static void _showPermissionSettingsDialog(
+    BuildContext context,
+    String message,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1A1A24),
-          title: const Text('Permission Required', style: TextStyle(color: Colors.white)),
+          title: const Text(
+            'Permission Required',
+            style: TextStyle(color: Colors.white),
+          ),
           content: Text(message, style: const TextStyle(color: Colors.white70)),
           actions: [
             TextButton(
@@ -104,7 +130,10 @@ class LocationService {
                 Navigator.of(context).pop();
                 Geolocator.openAppSettings();
               },
-              child: const Text('Open Settings', style: TextStyle(color: Color(0xFF00B4D8))),
+              child: const Text(
+                'Open Settings',
+                style: TextStyle(color: Color(0xFF00B4D8)),
+              ),
             ),
           ],
         );

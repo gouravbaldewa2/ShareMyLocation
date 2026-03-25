@@ -16,11 +16,11 @@ class DriverTrackingScreen extends StatefulWidget {
 
 class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
   final ApiClient _api = ApiClient();
-  
+
   Map<String, dynamic>? _vehicleData;
   bool _isLoading = true;
   bool _isSharing = false;
-  
+
   WebSocketChannel? _channel;
   StreamSubscription<Position>? _positionStream;
 
@@ -42,7 +42,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invalid link or expired fleet')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Invalid link or expired fleet')),
+        );
       }
     }
   }
@@ -63,31 +65,38 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
     final vehicleId = _vehicleData!['vehicle']['id'];
 
     _channel = WebSocketChannel.connect(Uri.parse(ApiClient.wsUrl));
-    _channel!.sink.add(jsonEncode({
-      'type': 'shareVehicle',
-      'vehicleId': vehicleId,
-    }));
+    _channel!.sink.add(
+      jsonEncode({'type': 'shareVehicle', 'vehicleId': vehicleId}),
+    );
 
     // Send the first location immediately so viewers don't have to wait for movement
-    _channel!.sink.add(jsonEncode({
-      'type': 'updateVehicle',
-      'data': {
-        'latitude': initialPosition.latitude,
-        'longitude': initialPosition.longitude,
-      }
-    }));
-
-    _positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.bestForNavigation, distanceFilter: 5),
-    ).listen((Position position) {
-      _channel?.sink.add(jsonEncode({
+    _channel!.sink.add(
+      jsonEncode({
         'type': 'updateVehicle',
         'data': {
-          'latitude': position.latitude,
-          'longitude': position.longitude,
-        }
-      }));
-    });
+          'latitude': initialPosition.latitude,
+          'longitude': initialPosition.longitude,
+        },
+      }),
+    );
+
+    _positionStream =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.bestForNavigation,
+            distanceFilter: 5,
+          ),
+        ).listen((Position position) {
+          _channel?.sink.add(
+            jsonEncode({
+              'type': 'updateVehicle',
+              'data': {
+                'latitude': position.latitude,
+                'longitude': position.longitude,
+              },
+            }),
+          );
+        });
 
     setState(() => _isSharing = true);
   }
@@ -95,10 +104,12 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
   void _stopSharing() {
     _positionStream?.cancel();
     if (_channel != null && _vehicleData != null) {
-      _channel!.sink.add(jsonEncode({
-        'type': 'stopVehicle',
-        'vehicleId': _vehicleData!['vehicle']['id'],
-      }));
+      _channel!.sink.add(
+        jsonEncode({
+          'type': 'stopVehicle',
+          'vehicleId': _vehicleData!['vehicle']['id'],
+        }),
+      );
       _channel!.sink.close();
       _channel = null;
     }
@@ -113,8 +124,17 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (_vehicleData == null) return const Scaffold(body: Center(child: Text("Error: Fleet not found", style: TextStyle(color: Colors.white))));
+    if (_isLoading)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_vehicleData == null)
+      return const Scaffold(
+        body: Center(
+          child: Text(
+            "Error: Fleet not found",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
 
     final vehicle = _vehicleData!['vehicle'];
     final fleetName = _vehicleData!['fleetName'];
@@ -126,7 +146,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
           children: [
             Text(
               vehicle['name'],
-              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -141,14 +165,18 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
                 width: 200,
                 height: 200,
                 decoration: BoxDecoration(
-                  color: _isSharing ? Colors.redAccent : const Color(0xFF00B4D8),
+                  color: _isSharing
+                      ? Colors.redAccent
+                      : const Color(0xFF00B4D8),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: _isSharing ? Colors.redAccent.withOpacity(0.4) : const Color(0xFF00B4D8).withOpacity(0.4),
+                      color: _isSharing
+                          ? Colors.redAccent.withOpacity(0.4)
+                          : const Color(0xFF00B4D8).withOpacity(0.4),
                       blurRadius: 20,
                       spreadRadius: 5,
-                    )
+                    ),
                   ],
                 ),
                 child: Center(
@@ -166,7 +194,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
             ),
             const SizedBox(height: 64),
             Text(
-              _isSharing ? '📡 Live — your location is being shared' : 'You are not sharing your location',
+              _isSharing
+                  ? '📡 Live — your location is being shared'
+                  : 'You are not sharing your location',
               style: const TextStyle(color: Colors.grey),
             ),
           ],

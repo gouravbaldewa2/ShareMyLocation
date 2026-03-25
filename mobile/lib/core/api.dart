@@ -18,17 +18,17 @@ const _flavor = String.fromEnvironment('FLAVOR', defaultValue: 'prod');
 
 const _baseUrls = {
   'prod': 'https://sharemylocation-production.up.railway.app',
-  'dev':  'https://sharemylocation-staging.up.railway.app',
+  'dev': 'https://sharemylocation-staging.up.railway.app',
 };
 
 const _wsUrls = {
   'prod': 'wss://sharemylocation-production.up.railway.app/ws',
-  'dev':  'wss://sharemylocation-staging.up.railway.app/ws',
+  'dev': 'wss://sharemylocation-staging.up.railway.app/ws',
 };
 
 class ApiClient {
   static final String baseUrl = _baseUrls[_flavor]!;
-  static final String wsUrl   = _wsUrls[_flavor]!;
+  static final String wsUrl = _wsUrls[_flavor]!;
 
   Future<LocationModel> createLocation({
     required double lat,
@@ -73,15 +73,11 @@ class ApiClient {
     }
   }
 
-  Future<FleetModel> createFleet({
-    required String name,
-  }) async {
+  Future<FleetModel> createFleet({required String name}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api/fleets'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'name': name,
-      }),
+      body: jsonEncode({'name': name}),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -116,7 +112,9 @@ class ApiClient {
   }
 
   Future<void> deleteFleet(String adminCode) async {
-    final response = await http.delete(Uri.parse('$baseUrl/api/fleets/admin/$adminCode'));
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/fleets/admin/$adminCode'),
+    );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Failed to delete fleet');
@@ -131,11 +129,7 @@ class ApiClient {
     final response = await http.post(
       Uri.parse('$baseUrl/api/vehicles'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'fleetId': fleetId,
-        'name': name,
-        'color': color,
-      }),
+      body: jsonEncode({'fleetId': fleetId, 'name': name, 'color': color}),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -153,7 +147,9 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> getVehicleByShareCode(String shareCode) async {
-    final response = await http.get(Uri.parse('$baseUrl/api/vehicles/share/$shareCode'));
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/vehicles/share/$shareCode'),
+    );
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {

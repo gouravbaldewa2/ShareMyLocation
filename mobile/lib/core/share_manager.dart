@@ -28,8 +28,7 @@ class ShareManager {
       'createdAt': DateTime.now().toIso8601String(),
     });
 
-    await prefs.setStringList(
-        _key, mapList.map((e) => jsonEncode(e)).toList());
+    await prefs.setStringList(_key, mapList.map((e) => jsonEncode(e)).toList());
   }
 
   /// Remove a share from local storage
@@ -42,8 +41,7 @@ class ShareManager {
         .toList();
     mapList.removeWhere((e) => e['locationId'] == locationId);
 
-    await prefs.setStringList(
-        _key, mapList.map((e) => jsonEncode(e)).toList());
+    await prefs.setStringList(_key, mapList.map((e) => jsonEncode(e)).toList());
   }
 
   /// Fetch all saved shares, verifying each still exists on the server
@@ -60,8 +58,9 @@ class ShareManager {
 
     for (var s in mapList) {
       try {
-        final location =
-            await _apiClient.getLocation(s['locationId'] as String);
+        final location = await _apiClient.getLocation(
+          s['locationId'] as String,
+        );
         shares.add(location);
       } on NotFoundException {
         // Server confirmed this location no longer exists — remove locally
@@ -73,10 +72,11 @@ class ShareManager {
 
     // Clean up only confirmed-deleted shares from local storage
     if (deletedIds.isNotEmpty) {
-      mapList.removeWhere(
-          (e) => deletedIds.contains(e['locationId']));
+      mapList.removeWhere((e) => deletedIds.contains(e['locationId']));
       await prefs.setStringList(
-          _key, mapList.map((e) => jsonEncode(e)).toList());
+        _key,
+        mapList.map((e) => jsonEncode(e)).toList(),
+      );
     }
 
     return shares;

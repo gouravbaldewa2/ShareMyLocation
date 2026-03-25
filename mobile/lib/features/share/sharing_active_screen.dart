@@ -7,7 +7,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
-
 import 'dart:convert';
 
 import 'package:geolocator/geolocator.dart';
@@ -35,7 +34,7 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
   final ApiClient _apiClient = ApiClient();
   final ShareManager _shareManager = ShareManager();
   final MapController _mapController = MapController();
-  
+
   LatLng? _currentPosition;
   StreamSubscription<Position>? _locationSub;
   WebSocketChannel? _channel;
@@ -59,20 +58,24 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
 
     if (widget.isLive) {
       _connectWebSocket();
-      _locationSub = Geolocator.getPositionStream(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
-      ).listen((Position position) {
-        if (mounted) {
-          setState(() {
-            _currentPosition = LatLng(position.latitude, position.longitude);
+      _locationSub =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 10,
+            ),
+          ).listen((Position position) {
+            if (mounted) {
+              setState(() {
+                _currentPosition = LatLng(
+                  position.latitude,
+                  position.longitude,
+                );
+              });
+              _mapController.move(_currentPosition!, 15);
+              _sendLocationUpdate(position);
+            }
           });
-          _mapController.move(_currentPosition!, 15);
-          _sendLocationUpdate(position);
-        }
-      });
     }
   }
 
@@ -85,13 +88,15 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
 
   void _sendLocationUpdate(Position position) {
     if (_channel != null) {
-      _channel!.sink.add(jsonEncode({
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-        'speed': position.speed,
-        'heading': position.heading,
-        'timestamp': DateTime.now().toIso8601String(),
-      }));
+      _channel!.sink.add(
+        jsonEncode({
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+          'speed': position.speed,
+          'heading': position.heading,
+          'timestamp': DateTime.now().toIso8601String(),
+        }),
+      );
     }
   }
 
@@ -115,10 +120,11 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
   }
 
   void _shareLinkNative() {
-    Share.share('Track my location live on Orbit! $_shareUrl', subject: 'My Location on Orbit');
+    Share.share(
+      'Track my location live on Orbit! $_shareUrl',
+      subject: 'My Location on Orbit',
+    );
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -142,14 +148,19 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
                 userAgentPackageName: 'com.sharemylocation.app',
                 tileProvider: NetworkTileProvider(),
               ),
-              if (_currentPosition != null) MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _currentPosition!,
-                    child: const Icon(Icons.my_location, color: Color(0xFF00B4D8), size: 30),
-                  ),
-                ],
-              ),
+              if (_currentPosition != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _currentPosition!,
+                      child: const Icon(
+                        Icons.my_location,
+                        color: Color(0xFF00B4D8),
+                        size: 30,
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
           // Back button
@@ -192,7 +203,10 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.white.withOpacity(0.1)),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 10),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 10,
+                  ),
                 ],
               ),
               child: Column(
@@ -214,7 +228,11 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
                           const SizedBox(width: 8),
                           const Text(
                             'Sharing Active',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ],
                       ),
@@ -233,16 +251,21 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: _stopSharing,
-                      child: const Text('Stop Sharing', style: TextStyle(fontSize: 16)),
+                      child: const Text(
+                        'Stop Sharing',
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          )
+          ),
         ],
       ),
     );
