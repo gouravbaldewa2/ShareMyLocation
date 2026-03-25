@@ -9,9 +9,26 @@ class NotFoundException implements Exception {
   String toString() => message;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Environment config injected at build time via --dart-define=FLAVOR=dev|prod
+// Production:  flutter build apk --flavor prod --dart-define=FLAVOR=prod
+// Dev APK:     flutter build apk --flavor dev  --dart-define=FLAVOR=dev
+// ─────────────────────────────────────────────────────────────────────────────
+const _flavor = String.fromEnvironment('FLAVOR', defaultValue: 'prod');
+
+const _baseUrls = {
+  'prod': 'https://sharemylocation-production.up.railway.app',
+  'dev':  'https://sharemylocation-staging.up.railway.app',
+};
+
+const _wsUrls = {
+  'prod': 'wss://sharemylocation-production.up.railway.app/ws',
+  'dev':  'wss://sharemylocation-staging.up.railway.app/ws',
+};
+
 class ApiClient {
-  static const String baseUrl = 'https://sharemylocation-production.up.railway.app';
-  static const String wsUrl = 'wss://sharemylocation-production.up.railway.app/ws';
+  static final String baseUrl = _baseUrls[_flavor]!;
+  static final String wsUrl   = _wsUrls[_flavor]!;
 
   Future<LocationModel> createLocation({
     required double lat,

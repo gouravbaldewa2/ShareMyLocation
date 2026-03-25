@@ -29,14 +29,28 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.sharemyloc.app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    flavorDimensions += "environment"
+
+    productFlavors {
+        create("prod") {
+            dimension = "environment"
+            // Production: same applicationId as before — Play Store build unaffected
+            applicationId = "com.sharemyloc.app"
+            resValue("string", "app_name", "Orbit")
+        }
+        create("dev") {
+            dimension = "environment"
+            // Dev: different ID so it installs ALONGSIDE production without conflicts
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "Orbit DEV")
+        }
     }
 
     signingConfigs {
@@ -50,7 +64,12 @@ android {
 
     buildTypes {
         release {
+            // Release signing ONLY applies to prod flavor
             signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            // Dev APK uses debug signing (no keystore needed)
+            isDebuggable = true
         }
     }
 }

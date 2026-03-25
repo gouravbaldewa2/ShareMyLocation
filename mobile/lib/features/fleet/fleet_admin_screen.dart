@@ -225,12 +225,18 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
                            if (nameController.text.isEmpty) return;
                            Navigator.pop(ctx);
                            try {
-                             await _api.addVehicleToFleet(
+                             final newVehicle = await _api.addVehicleToFleet(
                                fleetId: _fleet!.id,
                                name: nameController.text.trim(),
                                color: selectedColor,
                              );
-                             _loadFleet(); // reload view
+                             // Directly append the new vehicle to local state
+                             // without re-establishing the WebSocket connection
+                             if (mounted) {
+                               setState(() {
+                                 _fleet!.vehicles.add(newVehicle);
+                               });
+                             }
                            } catch (e) {
                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to add')));
                            }

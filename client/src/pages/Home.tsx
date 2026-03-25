@@ -541,28 +541,6 @@ export default function Home() {
             </Card>
           </div>
         )}
-
-        <div className="mt-8 pt-8 border-t">
-          <div className="text-center">
-            <p className="text-muted-foreground mb-4">
-              Need to track multiple vehicles on the same map?
-            </p>
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <Link href="/fleets">
-                <Button variant="outline" size="lg" data-testid="button-my-fleets">
-                  <Car className="w-4 h-4 mr-2" />
-                  My Fleets
-                </Button>
-              </Link>
-              <Link href="/fleet">
-                <Button variant="outline" size="lg" data-testid="button-fleet">
-                  <Car className="w-4 h-4 mr-2" />
-                  Create Fleet Tracker
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
