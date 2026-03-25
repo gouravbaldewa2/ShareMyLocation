@@ -13,14 +13,18 @@ import 'features/fleet/my_fleets_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const OrbitApp());
+  final prefs = await SharedPreferences.getInstance();
+  final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+  runApp(OrbitApp(hasSeenOnboarding: hasSeenOnboarding));
 }
 
 class OrbitApp extends StatelessWidget {
-  const OrbitApp({super.key});
+  final bool hasSeenOnboarding;
+  const OrbitApp({super.key, required this.hasSeenOnboarding});
 
   @override
   Widget build(BuildContext context) {
+    final router = createAppRouter(hasSeenOnboarding);
     return MaterialApp.router(
       title: 'Orbit',
       debugShowCheckedModeBanner: false,
@@ -33,7 +37,7 @@ class OrbitApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Inter',
       ),
-      routerConfig: appRouter,
+      routerConfig: router,
     );
   }
 }

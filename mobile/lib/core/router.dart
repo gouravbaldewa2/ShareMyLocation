@@ -9,6 +9,7 @@ import '../features/driver/driver_tracking_screen.dart';
 import '../features/guest/guest_location_screen.dart';
 import '../features/guest/guest_fleet_screen.dart';
 import '../features/guest/join_guest_fleet_screen.dart';
+import '../features/onboarding/onboarding_screen.dart';
 
 CustomTransitionPage<void> _fadePage({
   required GoRouterState state,
@@ -24,74 +25,83 @@ CustomTransitionPage<void> _fadePage({
   );
 }
 
-final GoRouter appRouter = GoRouter(
-  initialLocation: '/',
-  routes: [
-    GoRoute(
-      path: '/',
-      pageBuilder: (context, state) => _fadePage(
-        state: state,
-        child: const MainNavigationScreen(),
-      ),
-    ),
-    GoRoute(
-      path: '/join_guest_fleet',
-      pageBuilder: (context, state) => _fadePage(
-        state: state,
-        child: const JoinGuestFleetScreen(),
-      ),
-    ),
-    GoRoute(
-      path: '/share_setup',
-      pageBuilder: (context, state) => _fadePage(
-        state: state,
-        child: const ShareSetupScreen(),
-      ),
-    ),
-    GoRoute(
-      path: '/sharing_active/:id',
-      pageBuilder: (context, state) => _fadePage(
-        state: state,
-        child: SharingActiveScreen(
-          locationId: state.pathParameters['id']!,
-          isLive: state.uri.queryParameters['isLive'] == 'true',
+GoRouter createAppRouter(bool hasSeenOnboarding) {
+  return GoRouter(
+    initialLocation: hasSeenOnboarding ? '/' : '/onboarding',
+    routes: [
+      GoRoute(
+        path: '/onboarding',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const OnboardingScreen(),
         ),
       ),
-    ),
-    GoRoute(
-      path: '/create_fleet',
-      pageBuilder: (context, state) => _fadePage(
-        state: state,
-        child: const CreateFleetScreen(),
+      GoRoute(
+        path: '/',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const MainNavigationScreen(),
+        ),
       ),
-    ),
-    GoRoute(
-      path: '/fleet_admin/:adminCode',
-      pageBuilder: (context, state) => _fadePage(
-        state: state,
-        child: FleetAdminScreen(adminCode: state.pathParameters['adminCode']!),
+      GoRoute(
+        path: '/join_guest_fleet',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const JoinGuestFleetScreen(),
+        ),
       ),
-    ),
-    GoRoute(
-      path: '/vehicle/share/:code',
-      pageBuilder: (context, state) => _fadePage(
-        state: state,
-        child: DriverTrackingScreen(code: state.pathParameters['code']!),
+      GoRoute(
+        path: '/share_setup',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const ShareSetupScreen(),
+        ),
       ),
-    ),
-    GoRoute(
-      path: '/view/:id',
-      pageBuilder: (context, state) => _fadePage(
-        state: state,
-        child: GuestLocationScreen(locationId: state.pathParameters['id']!),
+      GoRoute(
+        path: '/sharing_active/:id',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: SharingActiveScreen(
+            locationId: state.pathParameters['id']!,
+            isLive: state.uri.queryParameters['isLive'] == 'true',
+          ),
+        ),
       ),
-    ),
-    GoRoute(
-      path: '/fleet/:id',
-      pageBuilder: (context, state) => _fadePage(
-        state: state,
-        child: GuestFleetScreen(fleetId: state.pathParameters['id']!),
+      GoRoute(
+        path: '/create_fleet',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const CreateFleetScreen(),
+        ),
       ),
-    ),
-  ],
-);
+      GoRoute(
+        path: '/fleet_admin/:adminCode',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: FleetAdminScreen(adminCode: state.pathParameters['adminCode']!),
+        ),
+      ),
+      GoRoute(
+        path: '/vehicle/share/:code',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: DriverTrackingScreen(code: state.pathParameters['code']!),
+        ),
+      ),
+      GoRoute(
+        path: '/view/:id',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: GuestLocationScreen(locationId: state.pathParameters['id']!),
+        ),
+      ),
+      GoRoute(
+        path: '/fleet/:id',
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: GuestFleetScreen(fleetId: state.pathParameters['id']!),
+        ),
+      ),
+    ],
+  );
+}
