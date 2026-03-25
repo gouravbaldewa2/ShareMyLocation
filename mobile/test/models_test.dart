@@ -21,17 +21,14 @@ void main() {
       expect(location.isLive, true);
     });
 
-    test(
-      'Edge case: Handle missing JSON fields safely (to be implemented)',
-      () {
-        // In production, we'd add safe parsing for malformed API responses.
-      },
-    );
+    test('Edge case: Handle missing JSON fields safely (to be implemented)', () {
+      // In production, we'd add safe parsing for malformed API responses.
+    });
   });
 
   group('Security Edge Cases', () {
     test('Fleet admin link cannot be viewed by guest link', () {
-      // Unit assertions placeholder to verify boundary crossing.
+       // Unit assertions placeholder to verify boundary crossing.
     });
   });
 }

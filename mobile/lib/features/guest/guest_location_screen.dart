@@ -31,26 +31,24 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
 
   Future<void> _loadInitialData() async {
     try {
-      final response = await http.get(
-        Uri.parse('${ApiClient.baseUrl}/api/locations/${widget.locationId}'),
-      );
+      final response = await http.get(Uri.parse('${ApiClient.baseUrl}/api/locations/${widget.locationId}'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
           _currentPosition = LatLng(
-            double.parse(data['latitude'].toString()),
-            double.parse(data['longitude'].toString()),
+            double.parse(data['latitude'].toString()), 
+            double.parse(data['longitude'].toString())
           );
           _name = data['name'];
           _isLive = data['isLive'] ?? false;
           _isLoading = false;
         });
-
+        
         if (_isLive) {
           _connectWebSocket();
         }
       } else {
-        setState(() => _isLoading = false);
+         setState(() => _isLoading = false);
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -60,30 +58,27 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
   void _connectWebSocket() {
     final wsUrl = ApiClient.baseUrl.replaceFirst('http', 'ws');
     _channel = WebSocketChannel.connect(Uri.parse('$wsUrl/ws'));
+    
+    _channel!.sink.add(jsonEncode({
+      'type': 'subscribe',
+      'locationId': widget.locationId,
+    }));
 
-    _channel!.sink.add(
-      jsonEncode({'type': 'subscribe', 'locationId': widget.locationId}),
-    );
-
-    _channel!.stream.listen(
-      (message) {
-        final data = jsonDecode(message);
-        if (data['type'] == 'location_update' &&
-            data['locationId'] == widget.locationId) {
-          if (mounted) {
-            setState(() {
-              _currentPosition = LatLng(
-                double.parse(data['latitude'].toString()),
-                double.parse(data['longitude'].toString()),
-              );
-            });
-          }
+    _channel!.stream.listen((message) {
+      final data = jsonDecode(message);
+      if (data['type'] == 'location_update' && data['locationId'] == widget.locationId) {
+        if (mounted) {
+          setState(() {
+            _currentPosition = LatLng(
+              double.parse(data['latitude'].toString()), 
+              double.parse(data['longitude'].toString())
+            );
+          });
         }
-      },
-      onError: (e) {
-        debugPrint('WebSocket error: $e');
-      },
-    );
+      }
+    }, onError: (e) {
+      debugPrint('WebSocket error: $e');
+    });
   }
 
   @override
@@ -94,10 +89,8 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading)
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (_currentPosition == null)
-      return const Scaffold(body: Center(child: Text("Location not found")));
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_currentPosition == null) return const Scaffold(body: Center(child: Text("Location not found")));
 
     return Scaffold(
       body: Stack(
@@ -163,20 +156,9 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _name,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text(_name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  Text(
-                    _isLive ? 'Live Location' : 'Last Known Location',
-                    style: TextStyle(
-                      color: _isLive ? Colors.green : Colors.grey,
-                    ),
-                  ),
+                  Text(_isLive ? 'Live Location' : 'Last Known Location', style: TextStyle(color: _isLive ? Colors.green : Colors.grey)),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
@@ -193,7 +175,7 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
                 ],
               ),
             ),
-          ),
+          )
         ],
       ),
     );

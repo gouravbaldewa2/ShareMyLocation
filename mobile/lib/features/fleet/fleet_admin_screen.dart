@@ -23,7 +23,7 @@ class FleetAdminScreen extends StatefulWidget {
 class _FleetAdminScreenState extends State<FleetAdminScreen> {
   final ApiClient _api = ApiClient();
   final MapController _mapController = MapController();
-
+  
   FleetModel? _fleet;
   bool _isLoading = true;
   WebSocketChannel? _channel;
@@ -51,79 +51,72 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
 
   void _connectWebSocket() {
     if (_fleet == null) return;
-
+    
     _channel = WebSocketChannel.connect(Uri.parse(ApiClient.wsUrl));
-    _channel!.sink.add(
-      jsonEncode({'type': 'subscribeFleet', 'fleetId': _fleet!.id}),
-    );
+    _channel!.sink.add(jsonEncode({
+      'type': 'subscribeFleet',
+      'fleetId': _fleet!.id,
+    }));
 
     _channel!.stream.listen((message) {
       final decoded = jsonDecode(message);
       if (decoded['type'] == 'vehicleUpdate') {
-        final data = decoded['data'];
-        setState(() {
-          final idx = _fleet!.vehicles.indexWhere((v) => v.id == data['id']);
-          if (idx != -1) {
-            final v = _fleet!.vehicles[idx];
-            if (data['latitude'] != null)
-              v.latitude = (data['latitude'] as num).toDouble();
-            if (data['longitude'] != null)
-              v.longitude = (data['longitude'] as num).toDouble();
-            if (data['isLive'] != null) v.isLive = data['isLive'];
-            if (data['lastUpdated'] != null)
-              v.lastUpdated = DateTime.parse(data['lastUpdated']).toLocal();
-
-            // Auto-pan to updated vehicle
-            if (mounted && v.latitude != null && v.longitude != null) {
-              _mapController.move(LatLng(v.latitude!, v.longitude!), 14);
-            }
-          }
-        });
-      } else if (decoded['type'] == 'vehicles') {
-        // Batch initial sync
-        final List vehicles = decoded['data'];
-        setState(() {
-          bool autoPan = false;
-          LatLng? panTarget;
-          for (var vData in vehicles) {
-            final idx = _fleet!.vehicles.indexWhere((v) => v.id == vData['id']);
+         final data = decoded['data'];
+         setState(() {
+            final idx = _fleet!.vehicles.indexWhere((v) => v.id == data['id']);
             if (idx != -1) {
-              final v = _fleet!.vehicles[idx];
-              if (vData['latitude'] != null)
-                v.latitude = (vData['latitude'] as num).toDouble();
-              if (vData['longitude'] != null)
-                v.longitude = (vData['longitude'] as num).toDouble();
-              if (vData['isLive'] != null) v.isLive = vData['isLive'];
-              if (vData['lastUpdated'] != null)
-                v.lastUpdated = DateTime.parse(vData['lastUpdated']).toLocal();
-
-              if (v.isLive && v.latitude != null && panTarget == null) {
-                panTarget = LatLng(v.latitude!, v.longitude!);
-                autoPan = true;
-              }
-            } else {
-              try {
-                // Add missing vehicle that we did not have locally
-                _fleet!.vehicles.add(
-                  VehicleModel.fromJson(vData as Map<String, dynamic>),
-                );
-              } catch (e) {
-                // Ignore missing or malformed vehicle
-              }
+               final v = _fleet!.vehicles[idx];
+               if (data['latitude'] != null) v.latitude = (data['latitude'] as num).toDouble();
+               if (data['longitude'] != null) v.longitude = (data['longitude'] as num).toDouble();
+               if (data['isLive'] != null) v.isLive = data['isLive'];
+               if (data['lastUpdated'] != null) v.lastUpdated = DateTime.parse(data['lastUpdated']).toLocal();
+               
+               // Auto-pan to updated vehicle
+               if (mounted && v.latitude != null && v.longitude != null) {
+                  _mapController.move(LatLng(v.latitude!, v.longitude!), 14);
+               }
             }
-          }
-          if (autoPan && mounted && panTarget != null) {
-            _mapController.move(panTarget, 14);
-          }
-        });
+         });
+      } else if (decoded['type'] == 'vehicles') {
+         // Batch initial sync 
+         final List vehicles = decoded['data'];
+         setState(() {
+           bool autoPan = false;
+           LatLng? panTarget;
+           for (var vData in vehicles) {
+              final idx = _fleet!.vehicles.indexWhere((v) => v.id == vData['id']);
+              if (idx != -1) {
+                 final v = _fleet!.vehicles[idx];
+                 if (vData['latitude'] != null) v.latitude = (vData['latitude'] as num).toDouble();
+                 if (vData['longitude'] != null) v.longitude = (vData['longitude'] as num).toDouble();
+                 if (vData['isLive'] != null) v.isLive = vData['isLive'];
+                 if (vData['lastUpdated'] != null) v.lastUpdated = DateTime.parse(vData['lastUpdated']).toLocal();
+                 
+                 if (v.isLive && v.latitude != null && panTarget == null) {
+                    panTarget = LatLng(v.latitude!, v.longitude!);
+                    autoPan = true;
+                 }
+              } else {
+                 try {
+                     // Add missing vehicle that we did not have locally
+                     _fleet!.vehicles.add(VehicleModel.fromJson(vData as Map<String, dynamic>));
+                 } catch (e) {
+                     // Ignore missing or malformed vehicle
+                 }
+              }
+           }
+           if (autoPan && mounted && panTarget != null) {
+              _mapController.move(panTarget, 14);
+           }
+         });
       } else if (decoded['type'] == 'vehicleStopped') {
-        setState(() {
-          final id = decoded['data']['vehicleId'];
-          final idx = _fleet!.vehicles.indexWhere((v) => v.id == id);
-          if (idx != -1) {
-            _fleet!.vehicles[idx].isLive = false;
-          }
-        });
+         setState(() {
+            final id = decoded['data']['vehicleId'];
+            final idx = _fleet!.vehicles.indexWhere((v) => v.id == id);
+            if (idx != -1) {
+               _fleet!.vehicles[idx].isLive = false;
+            }
+         });
       }
     });
   }
@@ -143,10 +136,7 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
   void _shareDriverLink(VehicleModel vehicle) {
     if (_fleet == null) return;
     final url = '${ApiClient.baseUrl}/vehicle/share/${vehicle.driverLink}';
-    Share.share(
-      'Start sharing location for ${vehicle.name}: $url',
-      subject: 'Driver Link',
-    );
+    Share.share('Start sharing location for ${vehicle.name}: $url', subject: 'Driver Link');
   }
 
   Future<void> _deleteVehicle(VehicleModel vehicle) async {
@@ -154,10 +144,7 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
       await _api.deleteVehicle(vehicle.id);
       _loadFleet(); // Reload to reflect changes
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to delete')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete')));
     }
   }
 
@@ -177,144 +164,107 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
   }
 
   void _showAddVehicleModal() {
-    final nameController = TextEditingController();
-    String selectedColor = '#00B4D8';
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF0F0F14),
-      isScrollControlled: true,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
-                left: 24,
-                right: 24,
-                top: 24,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Add New Vehicle',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+     final nameController = TextEditingController();
+     String selectedColor = '#00B4D8';
+     
+     showModalBottomSheet(
+       context: context,
+       backgroundColor: const Color(0xFF0F0F14),
+       isScrollControlled: true,
+       builder: (ctx) {
+         return StatefulBuilder(
+           builder: (ctx, setModalState) {
+             return Padding(
+               padding: EdgeInsets.only(
+                 bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                 left: 24, right: 24, top: 24,
+               ),
+               child: Column(
+                 mainAxisSize: MainAxisSize.min,
+                 crossAxisAlignment: CrossAxisAlignment.stretch,
+                 children: [
+                   Row(
+                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                     children: [
+                        const Text('Add New Vehicle', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                        IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx))
+                     ],
+                   ),
+                   const SizedBox(height: 16),
+                   TextField(
+                     controller: nameController,
+                     decoration: const InputDecoration(
+                       labelText: 'Vehicle Name',
+                       hintText: 'e.g., Delivery Van 3',
+                       filled: true,
+                       fillColor: Color(0xFF1A1A24),
+                     ),
+                   ),
+                   const SizedBox(height: 24),
+                   const Text('Pin Color', style: TextStyle(color: Colors.white)),
+                   const SizedBox(height: 8),
+                   Row(
+                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                     children: ['#00B4D8', '#2ECC71', '#E74C3C', '#F1C40F', '#9B59B6'].map((color) {
+                       return GestureDetector(
+                         onTap: () => setModalState(() => selectedColor = color),
+                         child: Container(
+                           width: 40, height: 40,
+                           decoration: BoxDecoration(
+                             color: _colorFromHex(color),
+                             shape: BoxShape.circle,
+                             border: Border.all(
+                               color: selectedColor == color ? Colors.white : Colors.transparent,
+                               width: 3
+                             )
+                           ),
+                         ),
+                       );
+                     }).toList(),
+                   ),
+                   const SizedBox(height: 32),
+                   SizedBox(
+                      height: 56,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00B4D8), foregroundColor: Colors.white),
+                        onPressed: () async {
+                           HapticFeedback.lightImpact();
+                           if (nameController.text.isEmpty) return;
+                           Navigator.pop(ctx);
+                           try {
+                             final newVehicle = await _api.addVehicleToFleet(
+                               fleetId: _fleet!.id,
+                               name: nameController.text.trim(),
+                               color: selectedColor,
+                             );
+                             // Directly append the new vehicle to local state
+                             // without re-establishing the WebSocket connection
+                             if (mounted) {
+                               setState(() {
+                                 _fleet!.vehicles.add(newVehicle);
+                               });
+                             }
+                           } catch (e) {
+                             if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to add')));
+                           }
+                        },
+                        child: const Text('Add Vehicle', style: TextStyle(fontSize: 18)),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.grey),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Vehicle Name',
-                      hintText: 'e.g., Delivery Van 3',
-                      filled: true,
-                      fillColor: Color(0xFF1A1A24),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Pin Color',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children:
-                        [
-                          '#00B4D8',
-                          '#2ECC71',
-                          '#E74C3C',
-                          '#F1C40F',
-                          '#9B59B6',
-                        ].map((color) {
-                          return GestureDetector(
-                            onTap: () =>
-                                setModalState(() => selectedColor = color),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: _colorFromHex(color),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: selectedColor == color
-                                      ? Colors.white
-                                      : Colors.transparent,
-                                  width: 3,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                  ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00B4D8),
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: () async {
-                        HapticFeedback.lightImpact();
-                        if (nameController.text.isEmpty) return;
-                        Navigator.pop(ctx);
-                        try {
-                          final newVehicle = await _api.addVehicleToFleet(
-                            fleetId: _fleet!.id,
-                            name: nameController.text.trim(),
-                            color: selectedColor,
-                          );
-                          // Directly append the new vehicle to local state
-                          // without re-establishing the WebSocket connection
-                          if (mounted) {
-                            setState(() {
-                              _fleet!.vehicles.add(newVehicle);
-                            });
-                          }
-                        } catch (e) {
-                          if (mounted)
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Failed to add')),
-                            );
-                        }
-                      },
-                      child: const Text(
-                        'Add Vehicle',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ), // ends Column
-            ); // ends Padding
-          },
-        ); // ends StatefulBuilder
-      },
-    );
+                   ),
+                   const SizedBox(height: 24),
+                 ],
+               ), // ends Column
+             ); // ends Padding
+           }
+         ); // ends StatefulBuilder
+       }
+     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading)
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (_fleet == null)
-      return const Scaffold(body: Center(child: Text("Fleet not found")));
+    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_fleet == null) return const Scaffold(body: Center(child: Text("Fleet not found")));
 
     return Scaffold(
       appBar: AppBar(
@@ -329,11 +279,11 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              HapticFeedback.lightImpact();
-              _shareGuestLink();
+               HapticFeedback.lightImpact();
+               _shareGuestLink();
             },
             tooltip: 'Share Guest Map',
-          ),
+          )
         ],
       ),
       body: Column(
@@ -356,110 +306,69 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Stack(
-                    children: [
-                      FlutterMap(
-                        mapController: _mapController,
-                        options: MapOptions(
-                          initialCenter: const LatLng(28.6139, 77.2090),
-                          initialZoom: 17,
-                          onMapReady: () {
-                            final liveVehicles = _fleet!.vehicles.where(
-                              (v) =>
-                                  v.isLive &&
-                                  v.latitude != null &&
-                                  v.longitude != null,
-                            );
-                            if (liveVehicles.isNotEmpty) {
-                              final v = liveVehicles.first;
-                              _mapController.move(
-                                LatLng(v.latitude!, v.longitude!),
-                                17,
-                              );
-                            }
-                          },
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate:
-                                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.sharemylocation.app',
-                          ),
-                          MarkerLayer(
-                            markers: _fleet!.vehicles
-                                .where(
-                                  (v) =>
-                                      v.isLive &&
-                                      v.latitude != null &&
-                                      v.longitude != null,
-                                )
-                                .map((v) {
-                                  return Marker(
-                                    point: LatLng(v.latitude!, v.longitude!),
-                                    width: 60,
-                                    height: 60,
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 4,
-                                            vertical: 2,
-                                          ),
-                                          color: Colors.black.withOpacity(0.6),
-                                          child: Text(
-                                            v.name,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        ),
-                                        Icon(
-                                          Icons.location_pin,
-                                          color: _colorFromHex(v.color),
-                                          size: 30,
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                })
-                                .toList(),
-                          ),
-                        ],
-                      ),
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: CircleAvatar(
-                          backgroundColor: const Color(0xFF0F0F14),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.my_location,
-                              color: Colors.white,
-                            ),
-                            onPressed: () {
-                              final liveVehicles = _fleet!.vehicles.where(
-                                (v) =>
-                                    v.isLive &&
-                                    v.latitude != null &&
-                                    v.longitude != null,
-                              );
-                              if (liveVehicles.isNotEmpty) {
-                                final v = liveVehicles.first;
-                                _mapController.move(
-                                  LatLng(v.latitude!, v.longitude!),
-                                  17,
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: const LatLng(28.6139, 77.2090),
+                    initialZoom: 17,
+                    onMapReady: () {
+                      final liveVehicles = _fleet!.vehicles.where((v) => v.isLive && v.latitude != null && v.longitude != null);
+                      if (liveVehicles.isNotEmpty) {
+                        final v = liveVehicles.first;
+                        _mapController.move(LatLng(v.latitude!, v.longitude!), 17);
+                      }
+                    },
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.sharemylocation.app',
+                    ),
+                    MarkerLayer(
+                      markers: _fleet!.vehicles
+                        .where((v) => v.isLive && v.latitude != null && v.longitude != null)
+                        .map((v) {
+                        return Marker(
+                          point: LatLng(v.latitude!, v.longitude!),
+                          width: 60,
+                          height: 60,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                               Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  color: Colors.black.withOpacity(0.6),
+                                  child: Text(v.name, style: const TextStyle(color: Colors.white, fontSize: 10)),
+                               ),
+                               Icon(Icons.location_pin, color: _colorFromHex(v.color), size: 30),
+                            ],
+                          )
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: CircleAvatar(
+                    backgroundColor: const Color(0xFF0F0F14),
+                    child: IconButton(
+                      icon: const Icon(Icons.my_location, color: Colors.white),
+                    onPressed: () {
+                      final liveVehicles = _fleet!.vehicles.where((v) => v.isLive && v.latitude != null && v.longitude != null);
+                      if (liveVehicles.isNotEmpty) {
+                        final v = liveVehicles.first;
+                        _mapController.move(LatLng(v.latitude!, v.longitude!), 17);
+                      }
+                    },
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
+          ),),),
           ),
           Expanded(
             flex: 4,
@@ -467,44 +376,28 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
               color: const Color(0xFF1A1A24),
               child: ListView(
                 children: [
-                  Padding(
+                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '${_fleet!.vehicles.length} Vehicles',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: () {
-                            HapticFeedback.lightImpact();
-                            _showAddVehicleModal();
-                          },
-                          icon: const Icon(Icons.add, color: Color(0xFF00B4D8)),
-                          label: const Text(
-                            'Add Vehicle',
-                            style: TextStyle(color: Color(0xFF00B4D8)),
-                          ),
-                        ),
+                        Text('${_fleet!.vehicles.length} Vehicles', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                         TextButton.icon(
+                           onPressed: () {
+                             HapticFeedback.lightImpact();
+                             _showAddVehicleModal();
+                           },
+                           icon: const Icon(Icons.add, color: Color(0xFF00B4D8)),
+                          label: const Text('Add Vehicle', style: TextStyle(color: Color(0xFF00B4D8))),
+                        )
                       ],
                     ),
                   ),
                   ..._fleet!.vehicles.map((v) {
                     final isLive = v.isLive;
                     return ListTile(
-                      leading: Icon(
-                        Icons.circle,
-                        color: isLive ? _colorFromHex(v.color) : Colors.grey,
-                      ),
-                      title: Text(
-                        v.name,
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                      leading: Icon(Icons.circle, color: isLive ? _colorFromHex(v.color) : Colors.grey),
+                      title: Text(v.name, style: const TextStyle(color: Colors.white)),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -514,55 +407,34 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
                                 const PulsingDot(size: 8),
                                 const SizedBox(width: 6),
                               ],
-                              Text(
-                                isLive ? 'Live' : 'Offline',
-                                style: TextStyle(
-                                  color: isLive
-                                      ? const Color(0xFF2ECC71)
-                                      : Colors.grey,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                              Text(isLive ? 'Live' : 'Offline', style: TextStyle(color: isLive ? const Color(0xFF2ECC71) : Colors.grey, fontWeight: FontWeight.w500, letterSpacing: 0.5)),
                             ],
                           ),
                           if (v.lastUpdated != null)
-                            Text(
-                              'Last seen: ${_formatTime(v.lastUpdated!)}',
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontSize: 12,
-                              ),
-                            ),
+                             Text('Last seen: ${_formatTime(v.lastUpdated!)}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
                         ],
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.delete,
-                              color: Colors.redAccent,
-                            ),
-                            tooltip: 'Delete Vehicle',
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                              _deleteVehicle(v);
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.share,
-                              color: Color(0xFF00B4D8),
-                            ),
-                            tooltip: 'Copy Driver Link',
-                            onPressed: () {
-                              HapticFeedback.lightImpact();
-                              _shareDriverLink(v);
-                            },
-                          ),
+                           IconButton(
+                             icon: const Icon(Icons.delete, color: Colors.redAccent),
+                             tooltip: 'Delete Vehicle',
+                             onPressed: () {
+                               HapticFeedback.lightImpact();
+                               _deleteVehicle(v);
+                             },
+                           ),
+                           IconButton(
+                             icon: const Icon(Icons.share, color: Color(0xFF00B4D8)),
+                             tooltip: 'Copy Driver Link',
+                             onPressed: () {
+                               HapticFeedback.lightImpact();
+                               _shareDriverLink(v);
+                             },
+                           ),
                         ],
-                      ),
+                      )
                     );
                   }).toList(),
                 ],

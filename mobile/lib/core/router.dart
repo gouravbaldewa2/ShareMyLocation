@@ -31,23 +31,31 @@ GoRouter createAppRouter(bool hasSeenOnboarding) {
     routes: [
       GoRoute(
         path: '/onboarding',
-        pageBuilder: (context, state) =>
-            _fadePage(state: state, child: const OnboardingScreen()),
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const OnboardingScreen(),
+        ),
       ),
       GoRoute(
         path: '/',
-        pageBuilder: (context, state) =>
-            _fadePage(state: state, child: const MainNavigationScreen()),
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const MainNavigationScreen(),
+        ),
       ),
       GoRoute(
         path: '/join_guest_fleet',
-        pageBuilder: (context, state) =>
-            _fadePage(state: state, child: const JoinGuestFleetScreen()),
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const JoinGuestFleetScreen(),
+        ),
       ),
       GoRoute(
         path: '/share_setup',
-        pageBuilder: (context, state) =>
-            _fadePage(state: state, child: const ShareSetupScreen()),
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const ShareSetupScreen(),
+        ),
       ),
       GoRoute(
         path: '/sharing_active/:id',
@@ -61,16 +69,16 @@ GoRouter createAppRouter(bool hasSeenOnboarding) {
       ),
       GoRoute(
         path: '/create_fleet',
-        pageBuilder: (context, state) =>
-            _fadePage(state: state, child: const CreateFleetScreen()),
+        pageBuilder: (context, state) => _fadePage(
+          state: state,
+          child: const CreateFleetScreen(),
+        ),
       ),
       GoRoute(
         path: '/fleet_admin/:adminCode',
         pageBuilder: (context, state) => _fadePage(
           state: state,
-          child: FleetAdminScreen(
-            adminCode: state.pathParameters['adminCode']!,
-          ),
+          child: FleetAdminScreen(adminCode: state.pathParameters['adminCode']!),
         ),
       ),
       GoRoute(

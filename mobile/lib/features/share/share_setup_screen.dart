@@ -37,21 +37,20 @@ class _ShareSetupScreenState extends State<ShareSetupScreen> {
       );
 
       // Save the share locally
-      await _shareManager.saveShare(locationId: loc.id, isLive: isLive);
+      await _shareManager.saveShare(
+        locationId: loc.id,
+        isLive: isLive,
+      );
 
       if (mounted) {
-        context.push('/sharing_active/${loc.id}?isLive=$isLive');
+         context.push('/sharing_active/${loc.id}?isLive=$isLive');
       }
     } catch (e) {
       if (mounted) {
-        final msg =
-            e.toString().contains('SocketException') ||
-                e.toString().contains('Failed host lookup')
+        final msg = e.toString().contains('SocketException') || e.toString().contains('Failed host lookup')
             ? 'Unable to connect. Please check your internet connection and try again.'
             : 'Something went wrong. Please try again.';
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -110,9 +109,7 @@ class _ShareSetupScreenState extends State<ShareSetupScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: ChoiceChip(
-                        label: Text(
-                          mins < 60 ? '$mins min' : '${mins ~/ 60} hr',
-                        ),
+                        label: Text(mins < 60 ? '$mins min' : '${mins~/60} hr'),
                         selected: isSelected,
                         onSelected: (val) {
                           HapticFeedback.lightImpact();
@@ -143,18 +140,13 @@ class _ShareSetupScreenState extends State<ShareSetupScreen> {
                   backgroundColor: const Color(0xFF00B4D8),
                   foregroundColor: Colors.white,
                 ),
-                onPressed: _isLoading
-                    ? null
-                    : () {
-                        HapticFeedback.lightImpact();
-                        _startSharing();
-                      },
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Start Sharing',
-                        style: TextStyle(fontSize: 18),
-                      ),
+                onPressed: _isLoading ? null : () {
+                  HapticFeedback.lightImpact();
+                  _startSharing();
+                },
+                child: _isLoading 
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Start Sharing', style: TextStyle(fontSize: 18)),
               ),
             ),
           ],

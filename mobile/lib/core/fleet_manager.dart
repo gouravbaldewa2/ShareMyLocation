@@ -11,14 +11,15 @@ class FleetManager {
   Future<void> saveFleet(String id, String adminCode) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = prefs.getStringList(_key) ?? [];
-
+    
     // Convert current map to add new one
-    final mapList = jsonList
-        .map((e) => jsonDecode(e) as Map<String, dynamic>)
-        .toList();
-
-    mapList.add({'id': id, 'adminCode': adminCode});
-
+    final mapList = jsonList.map((e) => jsonDecode(e) as Map<String, dynamic>).toList();
+    
+    mapList.add({
+      'id': id,
+      'adminCode': adminCode,
+    });
+    
     await prefs.setStringList(_key, mapList.map((e) => jsonEncode(e)).toList());
   }
 
@@ -26,12 +27,10 @@ class FleetManager {
   Future<void> removeFleet(String adminCode) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = prefs.getStringList(_key) ?? [];
-
-    final mapList = jsonList
-        .map((e) => jsonDecode(e) as Map<String, dynamic>)
-        .toList();
+    
+    final mapList = jsonList.map((e) => jsonDecode(e) as Map<String, dynamic>).toList();
     mapList.removeWhere((e) => e['adminCode'] == adminCode);
-
+    
     await prefs.setStringList(_key, mapList.map((e) => jsonEncode(e)).toList());
   }
 
@@ -39,19 +38,15 @@ class FleetManager {
   Future<List<FleetModel>> fetchMyFleets() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = prefs.getStringList(_key) ?? [];
-
-    final mapList = jsonList
-        .map((e) => jsonDecode(e) as Map<String, dynamic>)
-        .toList();
+    
+    final mapList = jsonList.map((e) => jsonDecode(e) as Map<String, dynamic>).toList();
     List<FleetModel> fleets = [];
     List<String> deletedCodes = [];
-
+    
     for (var f in mapList) {
       try {
-        final fetched = await _apiClient.getFleetByAdminCode(
-          f['adminCode'] as String,
-        );
-        fleets.add(fetched);
+         final fetched = await _apiClient.getFleetByAdminCode(f['adminCode'] as String);
+         fleets.add(fetched);
       } on NotFoundException {
         // Server confirmed this fleet no longer exists — remove locally
         deletedCodes.add(f['adminCode'] as String);
@@ -63,12 +58,9 @@ class FleetManager {
     // Clean up only confirmed-deleted fleets from local storage
     if (deletedCodes.isNotEmpty) {
       mapList.removeWhere((e) => deletedCodes.contains(e['adminCode']));
-      await prefs.setStringList(
-        _key,
-        mapList.map((e) => jsonEncode(e)).toList(),
-      );
+      await prefs.setStringList(_key, mapList.map((e) => jsonEncode(e)).toList());
     }
-
+    
     return fleets;
   }
 }

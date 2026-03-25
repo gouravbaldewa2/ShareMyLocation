@@ -62,16 +62,10 @@ class VehicleModel {
       color: json['color'] as String,
       locationId: json['locationId'] as String?,
       driverLink: json['shareCode'] as String,
-      latitude: json['latitude'] != null
-          ? (json['latitude'] as num).toDouble()
-          : null,
-      longitude: json['longitude'] != null
-          ? (json['longitude'] as num).toDouble()
-          : null,
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
       isLive: json['isLive'] ?? false,
-      lastUpdated: json['lastUpdated'] != null
-          ? DateTime.parse(json['lastUpdated'] as String).toLocal()
-          : null,
+      lastUpdated: json['lastUpdated'] != null ? DateTime.parse(json['lastUpdated'] as String).toLocal() : null,
     );
   }
 }
@@ -100,8 +94,7 @@ class FleetModel {
       adminCode: json['adminCode'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       expiresAt: DateTime.parse(json['expiresAt'] as String),
-      vehicles:
-          (json['vehicles'] as List?)
+      vehicles: (json['vehicles'] as List?)
               ?.map((v) => VehicleModel.fromJson(v as Map<String, dynamic>))
               .toList() ??
           [],
