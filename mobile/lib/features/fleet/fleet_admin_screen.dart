@@ -96,6 +96,13 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
                     panTarget = LatLng(v.latitude!, v.longitude!);
                     autoPan = true;
                  }
+              } else {
+                 try {
+                     // Add missing vehicle that we did not have locally
+                     _fleet!.vehicles.add(VehicleModel.fromJson(vData as Map<String, dynamic>));
+                 } catch (e) {
+                     // Ignore missing or malformed vehicle
+                 }
               }
            }
            if (autoPan && mounted && panTarget != null) {
