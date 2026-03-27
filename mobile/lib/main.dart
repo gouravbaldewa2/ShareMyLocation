@@ -381,7 +381,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         children: [
           // Hero Banner
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
               gradient: const LinearGradient(
@@ -400,23 +400,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 60), // Space for top breathing room
                 Text(
                   'Stay connected.\nStay in control.',
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 26,
                     fontWeight: FontWeight.w800,
                     height: 1.2,
                     letterSpacing: -0.5,
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 12),
                 Text(
                   'Share your location instantly or track your entire fleet.',
                   style: TextStyle(
-                    fontSize: 16,
-                    height: 1.5,
+                    fontSize: 15,
+                    height: 1.4,
                     color: Colors.white,
                     fontWeight: FontWeight.w500,
                   ),
@@ -424,7 +423,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           // Card 1: Share Location
           _buildHeroActionCard(
             title: 'Share Your Location',
@@ -438,7 +437,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               _sharesKey.currentState?.loadShares();
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           // Card 2: Fleet Command Center
           _buildHeroActionCard(
             title: 'Fleet Command Center',
@@ -478,26 +477,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           onTap: onTap,
           borderRadius: BorderRadius.circular(24),
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
                 Row(
                   children: [
                     Container(
-                      width: 48,
-                      height: 48,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: color.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(icon, color: color, size: 24),
+                      child: Icon(icon, color: color, size: 22),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Text(
                         title,
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
@@ -505,7 +504,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 Align(
                   alignment: Alignment.centerRight,
                   child: Container(
