@@ -375,7 +375,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   Widget _buildEmptyHomeView() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+      // Remove bottom padding of 100 so it doesn't artificially push content down
+      // Just enough padding to look clean
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -403,18 +405,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 Text(
                   'Stay connected.\nStay in control.',
                   style: TextStyle(
-                    fontSize: 26,
+                    fontSize: 24,
                     fontWeight: FontWeight.w800,
                     height: 1.2,
                     letterSpacing: -0.5,
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 12),
+                SizedBox(height: 8),
                 Text(
                   'Share your location instantly or track your entire fleet.',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     height: 1.4,
                     color: Colors.white,
                     fontWeight: FontWeight.w500,
@@ -423,13 +425,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          // Card 1: Share Location
-          _buildHeroActionCard(
+          const SizedBox(height: 20),
+          // Action Cards - Now horizontal and compact
+          _buildCompactActionTile(
             title: 'Share Your Location',
-            icon: Icons.location_on,
+            subtitle: 'Generate a tracking link',
+            icon: Icons.my_location,
             color: const Color(0xFF00B4D8),
-            buttonText: 'Share Now \u2192',
             onTap: () async {
               HapticFeedback.lightImpact();
               await context.push('/share_setup');
@@ -438,12 +440,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             },
           ),
           const SizedBox(height: 12),
-          // Card 2: Fleet Command Center
-          _buildHeroActionCard(
+          _buildCompactActionTile(
             title: 'Fleet Command Center',
+            subtitle: 'Monitor all vehicles',
             icon: Icons.directions_bus,
             color: const Color(0xFF9B59B6),
-            buttonText: 'Create Fleet \u2192',
             onTap: () async {
               HapticFeedback.lightImpact();
               await context.push('/create_fleet');
@@ -456,75 +457,65 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  Widget _buildHeroActionCard({
+  Widget _buildCompactActionTile({
     required String title,
+    required String subtitle,
     required IconData icon,
     required Color color,
-    required String buttonText,
     required VoidCallback onTap,
   }) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A24),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.05),
-        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: color.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(icon, color: color, size: 22),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 22),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         title,
                         style: const TextStyle(
-                          fontSize: 17,
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      buttonText,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withOpacity(0.5),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: color.withOpacity(0.8),
+                  size: 16,
                 ),
               ],
             ),
