@@ -308,6 +308,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   Widget _buildDashboard() {
+    if (!_statsLoading && _activeSharesCount == 0 && _activeFleetsCount == 0) {
+      return _buildEmptyHomeView();
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
@@ -365,6 +369,168 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyHomeView() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Hero Banner
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF00B4D8), Color(0xFF9B59B6)],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF00B4D8).withOpacity(0.3),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 60), // Space for top breathing room
+                Text(
+                  'Stay connected.\nStay in control.',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    height: 1.2,
+                    letterSpacing: -0.5,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Share your location instantly or track your entire fleet.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.5,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Card 1: Share Location
+          _buildHeroActionCard(
+            title: 'Share Your Location',
+            icon: Icons.location_on,
+            color: const Color(0xFF00B4D8),
+            buttonText: 'Share Now \u2192',
+            onTap: () async {
+              HapticFeedback.lightImpact();
+              await context.push('/share_setup');
+              _loadDashboardStats();
+              _sharesKey.currentState?.loadShares();
+            },
+          ),
+          const SizedBox(height: 16),
+          // Card 2: Fleet Command Center
+          _buildHeroActionCard(
+            title: 'Fleet Command Center',
+            icon: Icons.directions_bus,
+            color: const Color(0xFF9B59B6),
+            buttonText: 'Create Fleet \u2192',
+            onTap: () async {
+              HapticFeedback.lightImpact();
+              await context.push('/create_fleet');
+              _loadDashboardStats();
+              _fleetsKey.currentState?.loadFleets();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroActionCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required String buttonText,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A24),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.05),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(icon, color: color, size: 24),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      buttonText,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
