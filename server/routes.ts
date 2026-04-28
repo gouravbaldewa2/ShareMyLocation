@@ -333,7 +333,7 @@ export async function registerRoutes(
   });
 
   // Fleet routes — requires login to create
-  app.post("/api/fleets", requireAuth, async (req, res) => {
+  app.post("/api/fleets", async (req, res) => {
     try {
       const parsed = insertFleetSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -386,7 +386,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/fleets/admin/:adminCode", requireAuth, async (req, res) => {
+  app.delete("/api/fleets/admin/:adminCode", async (req, res) => {
     try {
       const adminCode = req.params.adminCode as string;
       const fleet = await storage.getFleetByAdminCode(adminCode);
