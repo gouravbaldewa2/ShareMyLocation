@@ -17,12 +17,12 @@ class NotFoundException implements Exception {
 const _flavor = String.fromEnvironment('FLAVOR', defaultValue: 'prod');
 
 const _baseUrls = {
-  'prod': 'https://sharemylocation-production.up.railway.app',
+  'prod': 'https://diplomatic-learning-production-f128.up.railway.app',
   'dev':  'https://sharemylocation-staging.up.railway.app',
 };
 
 const _wsUrls = {
-  'prod': 'wss://sharemylocation-production.up.railway.app/ws',
+  'prod': 'wss://diplomatic-learning-production-f128.up.railway.app/ws',
   'dev':  'wss://sharemylocation-staging.up.railway.app/ws',
 };
 

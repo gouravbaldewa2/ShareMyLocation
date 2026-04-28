@@ -259,7 +259,7 @@ export async function registerRoutes(
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta property="og:title" content="Join Fleet on Orbit" />
         <meta property="og:description" content="You've been invited to track a fleet's live location. Install Orbit to join." />
-        <meta property="og:image" content="https://sharemylocation-production.up.railway.app/orbit_icon.png" />
+        <meta property="og:image" content="https://diplomatic-learning-production-f128.up.railway.app/orbit_icon.png" />
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #0F0F14; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
           .container { max-width: 400px; padding: 24px; }
