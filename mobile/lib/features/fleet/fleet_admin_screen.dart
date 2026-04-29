@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../core/api.dart';
+import '../../core/map_config.dart';
 import '../../core/models.dart';
 import '../../core/widgets/pulsing_dot.dart';
 
@@ -27,11 +28,21 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
   FleetModel? _fleet;
   bool _isLoading = true;
   WebSocketChannel? _channel;
+  LatLng _initialCenter = MapConfig.fallbackCenter;
 
   @override
   void initState() {
     super.initState();
+    _initLocation();
     _loadFleet();
+  }
+
+  Future<void> _initLocation() async {
+    final pos = await MapConfig.getDeviceLocation();
+    if (mounted) {
+      setState(() => _initialCenter = pos);
+      _mapController.move(pos, 13);
+    }
   }
 
   Future<void> _loadFleet() async {
@@ -273,7 +284,10 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadFleet,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _loadFleet();
+            },
             tooltip: 'Refresh',
           ),
           IconButton(
@@ -309,20 +323,21 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
               children: [
                 FlutterMap(
                   mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: const LatLng(28.6139, 77.2090),
-                    initialZoom: 17,
+                   options: MapOptions(
+                    initialCenter: _initialCenter,
+                    initialZoom: 13,
                     onMapReady: () {
-                      final liveVehicles = _fleet!.vehicles.where((v) => v.isLive && v.latitude != null && v.longitude != null);
-                      if (liveVehicles.isNotEmpty) {
-                        final v = liveVehicles.first;
-                        _mapController.move(LatLng(v.latitude!, v.longitude!), 17);
-                      }
-                    },
+                       final liveVehicles = _fleet!.vehicles.where((v) => v.isLive && v.latitude != null && v.longitude != null);
+                       if (liveVehicles.isNotEmpty) {
+                         final v = liveVehicles.first;
+                         _mapController.move(LatLng(v.latitude!, v.longitude!), 17);
+                       }
+                     },
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate: MapConfig.tileUrl,
+                      fallbackUrl: MapConfig.fallbackTileUrl,
                       userAgentPackageName: 'com.sharemylocation.app',
                     ),
                     MarkerLayer(
@@ -357,6 +372,7 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
                     child: IconButton(
                       icon: const Icon(Icons.my_location, color: Colors.white),
                     onPressed: () {
+                      HapticFeedback.lightImpact();
                       final liveVehicles = _fleet!.vehicles.where((v) => v.isLive && v.latitude != null && v.longitude != null);
                       if (liveVehicles.isNotEmpty) {
                         final v = liveVehicles.first;

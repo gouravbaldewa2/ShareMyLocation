@@ -15,6 +15,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../core/api.dart';
 import '../../core/location_service.dart';
+import '../../core/map_config.dart';
 import '../../core/share_manager.dart';
 
 class SharingActiveScreen extends StatefulWidget {
@@ -138,7 +139,8 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: MapConfig.tileUrl,
+                fallbackUrl: MapConfig.fallbackTileUrl,
                 userAgentPackageName: 'com.sharemylocation.app',
                 tileProvider: NetworkTileProvider(),
               ),
@@ -160,7 +162,10 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
               backgroundColor: const Color(0xFF0F0F14),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => context.pop(),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  context.pop();
+                },
               ),
             ),
           ),
@@ -173,6 +178,7 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
               child: IconButton(
                 icon: const Icon(Icons.my_location, color: Colors.white),
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   if (_currentPosition != null) {
                     _mapController.move(_currentPosition!, 17);
                   }
@@ -220,7 +226,10 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.share, color: Color(0xFF00B4D8)),
-                        onPressed: _shareLinkNative,
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          _shareLinkNative();
+                        },
                       ),
                     ],
                   ),
@@ -235,7 +244,10 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      onPressed: _stopSharing,
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _stopSharing();
+                      },
                       child: const Text('Stop Sharing', style: TextStyle(fontSize: 16)),
                     ),
                   ),

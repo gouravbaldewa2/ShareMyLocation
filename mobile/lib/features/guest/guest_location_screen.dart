@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:http/http.dart' as http;
 import '../../core/api.dart';
+import '../../core/map_config.dart';
 
 class GuestLocationScreen extends StatefulWidget {
   final String locationId;
@@ -103,7 +105,8 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: MapConfig.tileUrl,
+                fallbackUrl: MapConfig.fallbackTileUrl,
                 userAgentPackageName: 'com.sharemylocation.app',
               ),
               MarkerLayer(
@@ -123,7 +126,10 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
               backgroundColor: const Color(0xFF0F0F14),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => context.pop(),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  context.pop();
+                },
               ),
             ),
           ),
@@ -135,6 +141,7 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
               child: IconButton(
                 icon: const Icon(Icons.my_location, color: Colors.white),
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   if (_currentPosition != null) {
                     _mapController.move(_currentPosition!, 17);
                   }
@@ -168,7 +175,9 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
                         backgroundColor: const Color(0xFF00B4D8),
                         foregroundColor: Colors.white,
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                      },
                       child: const Text('Get Directions'),
                     ),
                   ),

@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api.dart';
+import '../../core/map_config.dart';
 import '../../core/models.dart';
 import '../../core/widgets/pulsing_dot.dart';
 
@@ -25,11 +27,21 @@ class _GuestFleetScreenState extends State<GuestFleetScreen> {
   FleetModel? _fleet;
   bool _isLoading = true;
   WebSocketChannel? _channel;
+  LatLng _initialCenter = MapConfig.fallbackCenter;
 
   @override
   void initState() {
     super.initState();
+    _initLocation();
     _loadFleet();
+  }
+
+  Future<void> _initLocation() async {
+    final pos = await MapConfig.getDeviceLocation();
+    if (mounted) {
+      setState(() => _initialCenter = pos);
+      _mapController.move(pos, 13);
+    }
   }
 
   Future<void> _loadFleet() async {
@@ -176,19 +188,20 @@ class _GuestFleetScreenState extends State<GuestFleetScreen> {
                 FlutterMap(
                   mapController: _mapController,
                   options: MapOptions(
-                    initialCenter: const LatLng(28.6139, 77.2090),
-                    initialZoom: 17,
+                    initialCenter: _initialCenter,
+                    initialZoom: 13,
                     onMapReady: () {
-                      final liveVehicles = _fleet!.vehicles.where((v) => v.isLive && v.latitude != null && v.longitude != null);
-                      if (liveVehicles.isNotEmpty) {
-                        final v = liveVehicles.first;
-                        _mapController.move(LatLng(v.latitude!, v.longitude!), 17);
-                      }
-                    },
+                       final liveVehicles = _fleet!.vehicles.where((v) => v.isLive && v.latitude != null && v.longitude != null);
+                       if (liveVehicles.isNotEmpty) {
+                         final v = liveVehicles.first;
+                         _mapController.move(LatLng(v.latitude!, v.longitude!), 17);
+                       }
+                     },
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate: MapConfig.tileUrl,
+                      fallbackUrl: MapConfig.fallbackTileUrl,
                       userAgentPackageName: 'com.sharemylocation.app',
                     ),
                     MarkerLayer(
@@ -223,6 +236,7 @@ class _GuestFleetScreenState extends State<GuestFleetScreen> {
                     child: IconButton(
                       icon: const Icon(Icons.my_location, color: Colors.white),
                       onPressed: () {
+                        HapticFeedback.lightImpact();
                         final liveVehicles = _fleet!.vehicles.where((v) => v.isLive && v.latitude != null && v.longitude != null);
                         if (liveVehicles.isNotEmpty) {
                           final v = liveVehicles.first;
@@ -271,7 +285,10 @@ class _GuestFleetScreenState extends State<GuestFleetScreen> {
                         ? IconButton(
                             icon: const Icon(Icons.directions, color: Color(0xFF00B4D8)),
                             tooltip: 'Get Directions',
-                            onPressed: () => _getDirections(LatLng(v.latitude!, v.longitude!)),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              _getDirections(LatLng(v.latitude!, v.longitude!));
+                            },
                           )
                         : null,
                     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 class JoinGuestFleetScreen extends StatefulWidget {
@@ -69,7 +70,10 @@ class _JoinGuestFleetScreenState extends State<JoinGuestFleetScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: _joinFleet,
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                _joinFleet();
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00B4D8),
                 foregroundColor: Colors.white,

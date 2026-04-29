@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/api.dart';
@@ -135,7 +136,10 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
             ),
             const SizedBox(height: 64),
             InkWell(
-              onTap: _toggleSharing,
+              onTap: () {
+                HapticFeedback.mediumImpact();
+                _toggleSharing();
+              },
               borderRadius: BorderRadius.circular(100),
               child: Container(
                 width: 200,

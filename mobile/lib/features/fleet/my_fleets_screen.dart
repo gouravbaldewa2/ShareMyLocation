@@ -78,7 +78,10 @@ class MyFleetsScreenState extends State<MyFleetsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => loadFleets(),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              loadFleets();
+            },
           )
         ],
       ) : null,

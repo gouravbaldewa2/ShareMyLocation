@@ -92,7 +92,10 @@ class MySharesScreenState extends State<MySharesScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => loadShares(),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              loadShares();
+            },
           ),
         ],
       ) : null,
