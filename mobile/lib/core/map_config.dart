@@ -6,10 +6,16 @@ import 'package:latlong2/latlong.dart';
 class MapConfig {
   MapConfig._();
 
+  /// MapTiler API key, injected at build time via:
+  ///   flutter build apk --dart-define=MAPTILER_KEY=your_key_here
+  static const String _mapTilerKey =
+      String.fromEnvironment('MAPTILER_KEY', defaultValue: '');
+
   /// MapTiler Streets — colorful, detailed, Google Maps-like aesthetic.
-  /// If the 100K loads/month quota is hit, swap to [fallbackTileUrl].
-  static const String tileUrl =
-      'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=6mtaii8oJt1lZUU8eITx';
+  /// If the 100K loads/month quota is hit, or no key is provided, swap to [fallbackTileUrl].
+  static final String tileUrl = _mapTilerKey.isNotEmpty
+      ? 'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=$_mapTilerKey'
+      : fallbackTileUrl;
 
   /// CARTO Voyager — free, no API key, no quota. Use this if MapTiler quota is exhausted.
   static const String fallbackTileUrl =

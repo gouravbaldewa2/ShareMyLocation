@@ -10,25 +10,26 @@ class NotFoundException implements Exception {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Environment config injected at build time via --dart-define=FLAVOR=dev|prod
-// Production:  flutter build apk --flavor prod --dart-define=FLAVOR=prod
-// Dev APK:     flutter build apk --flavor dev  --dart-define=FLAVOR=dev
+// Environment config injected at build time via --dart-define
+//
+// Production:
+//   flutter build apk --dart-define=FLAVOR=prod \
+//     --dart-define=API_BASE_URL=https://your-app.up.railway.app \
+//     --dart-define=WS_URL=wss://your-app.up.railway.app/ws \
+//     --dart-define=MAPTILER_KEY=your_key
+//
+// Dev / local:
+//   flutter run --dart-define=FLAVOR=dev \
+//     --dart-define=API_BASE_URL=http://localhost:5000 \
+//     --dart-define=WS_URL=ws://localhost:5000/ws
 // ─────────────────────────────────────────────────────────────────────────────
 const _flavor = String.fromEnvironment('FLAVOR', defaultValue: 'prod');
 
-const _baseUrls = {
-  'prod': 'https://diplomatic-learning-production-f128.up.railway.app',
-  'dev':  'https://sharemylocation-staging.up.railway.app',
-};
-
-const _wsUrls = {
-  'prod': 'wss://diplomatic-learning-production-f128.up.railway.app/ws',
-  'dev':  'wss://sharemylocation-staging.up.railway.app/ws',
-};
-
 class ApiClient {
-  static final String baseUrl = _baseUrls[_flavor]!;
-  static final String wsUrl   = _wsUrls[_flavor]!;
+  static const String baseUrl =
+      String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:5000');
+  static const String wsUrl =
+      String.fromEnvironment('WS_URL', defaultValue: 'ws://localhost:5000/ws');
 
   Future<LocationModel> createLocation({
     required double lat,

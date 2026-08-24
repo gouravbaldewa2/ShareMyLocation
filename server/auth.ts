@@ -69,10 +69,8 @@ export function setupAuth(app: Express) {
     return;
   }
 
-  const callbackURL =
-    process.env.NODE_ENV === "production"
-      ? "https://diplomatic-learning-production-f128.up.railway.app/api/auth/google/callback"
-      : "http://localhost:5000/api/auth/google/callback";
+  const appUrl = process.env.APP_URL || "http://localhost:5000";
+  const callbackURL = `${appUrl}/api/auth/google/callback`;
 
   passport.use(
     new GoogleStrategy(
