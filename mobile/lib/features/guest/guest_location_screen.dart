@@ -41,7 +41,7 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
             double.parse(data['latitude'].toString()), 
             double.parse(data['longitude'].toString())
           );
-          _name = data['name'];
+          _name = data['name'] ?? 'Shared Location';
           _isLive = data['isLive'] ?? false;
           _isLoading = false;
         });
@@ -58,8 +58,7 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
   }
 
   void _connectWebSocket() {
-    final wsUrl = ApiClient.baseUrl.replaceFirst('http', 'ws');
-    _channel = WebSocketChannel.connect(Uri.parse('$wsUrl/ws'));
+    _channel = WebSocketChannel.connect(Uri.parse(ApiClient.wsUrl));
     
     _channel!.sink.add(jsonEncode({
       'type': 'subscribe',
@@ -68,14 +67,19 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
 
     _channel!.stream.listen((message) {
       final data = jsonDecode(message);
-      if (data['type'] == 'location_update' && data['locationId'] == widget.locationId) {
+      if (data['type'] == 'location' && data['data'] != null) {
+        final locData = data['data'];
         if (mounted) {
           setState(() {
             _currentPosition = LatLng(
-              double.parse(data['latitude'].toString()), 
-              double.parse(data['longitude'].toString())
+              (locData['latitude'] as num).toDouble(),
+              (locData['longitude'] as num).toDouble(),
             );
           });
+        }
+      } else if (data['type'] == 'stopped') {
+        if (mounted) {
+          setState(() => _isLive = false);
         }
       }
     }, onError: (e) {

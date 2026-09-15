@@ -78,20 +78,21 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
   }
 
   void _connectWebSocket() {
-    final wsUrl = ApiClient.baseUrl.replaceFirst('http', 'ws');
-    _channel = WebSocketChannel.connect(
-      Uri.parse('$wsUrl/ws/location/${widget.locationId}'),
-    );
+    _channel = WebSocketChannel.connect(Uri.parse(ApiClient.wsUrl));
+    _channel!.sink.add(jsonEncode({
+      'type': 'share',
+      'locationId': widget.locationId,
+    }));
   }
 
   void _sendLocationUpdate(Position position) {
     if (_channel != null) {
       _channel!.sink.add(jsonEncode({
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-        'speed': position.speed,
-        'heading': position.heading,
-        'timestamp': DateTime.now().toIso8601String(),
+        'type': 'update',
+        'data': {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        },
       }));
     }
   }

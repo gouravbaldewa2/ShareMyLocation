@@ -15,26 +15,8 @@ class _CreateFleetScreenState extends State<CreateFleetScreen> {
   final ApiClient _api = ApiClient();
   final FleetManager _fleetManager = FleetManager();
   final TextEditingController _fleetNameController = TextEditingController();
-  final TextEditingController _vehicleNameController = TextEditingController();
   
-  List<String> _vehicles = [];
   bool _isCreating = false;
-
-  void _addVehicle() {
-    final name = _vehicleNameController.text.trim();
-    if (name.isNotEmpty) {
-      setState(() {
-        _vehicles.add(name);
-        _vehicleNameController.clear();
-      });
-    }
-  }
-
-  void _removeVehicle(int index) {
-    setState(() {
-      _vehicles.removeAt(index);
-    });
-  }
 
   Future<void> _createFleet() async {
     final name = _fleetNameController.text.trim();

@@ -34,6 +34,7 @@ class _ShareSetupScreenState extends State<ShareSetupScreen> {
         lng: position.longitude,
         isLive: isLive,
         expiresInMinutes: isLive ? selectedExpiry : 15,
+        name: _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : null,
       );
 
       // Save the share locally

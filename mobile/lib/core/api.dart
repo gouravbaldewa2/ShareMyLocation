@@ -27,25 +27,30 @@ const _flavor = String.fromEnvironment('FLAVOR', defaultValue: 'prod');
 
 class ApiClient {
   static const String baseUrl =
-      String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:5000');
+      String.fromEnvironment('API_BASE_URL', defaultValue: 'https://diplomatic-learning-production-f128.up.railway.app');
   static const String wsUrl =
-      String.fromEnvironment('WS_URL', defaultValue: 'ws://localhost:5000/ws');
+      String.fromEnvironment('WS_URL', defaultValue: 'wss://diplomatic-learning-production-f128.up.railway.app/ws');
 
   Future<LocationModel> createLocation({
     required double lat,
     required double lng,
     required bool isLive,
     required int expiresInMinutes,
+    String? name,
   }) async {
+    final body = <String, dynamic>{
+      'latitude': lat,
+      'longitude': lng,
+      'isLive': isLive,
+      'expiresInMinutes': expiresInMinutes,
+    };
+    if (name != null && name.isNotEmpty) {
+      body['name'] = name;
+    }
     final response = await http.post(
       Uri.parse('$baseUrl/api/locations'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'latitude': lat,
-        'longitude': lng,
-        'isLive': isLive,
-        'expiresInMinutes': expiresInMinutes,
-      }),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {

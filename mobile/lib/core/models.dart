@@ -18,8 +18,8 @@ class LocationModel {
   factory LocationModel.fromJson(Map<String, dynamic> json) {
     return LocationModel(
       id: json['id'] as String,
-      latitude: json['latitude'] as double,
-      longitude: json['longitude'] as double,
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       expiresAt: DateTime.parse(json['expiresAt'] as String),
       isLive: json['isLive'] as bool,
@@ -91,7 +91,7 @@ class FleetModel {
     return FleetModel(
       id: json['id'] as String,
       name: json['name'] as String,
-      adminCode: json['adminCode'] as String,
+      adminCode: (json['adminCode'] as String?) ?? '',
       createdAt: DateTime.parse(json['createdAt'] as String),
       expiresAt: DateTime.parse(json['expiresAt'] as String),
       vehicles: (json['vehicles'] as List?)
