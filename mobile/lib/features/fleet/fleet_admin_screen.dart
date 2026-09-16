@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../../core/api.dart';
@@ -62,7 +61,11 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
 
   void _connectWebSocket() {
     if (_fleet == null) return;
-    
+
+    // _loadFleet() runs again after every vehicle add/delete — drop the previous
+    // socket first so reloads don't leak subscriptions that keep firing updates.
+    _channel?.sink.close();
+
     _channel = WebSocketChannel.connect(Uri.parse(ApiClient.wsUrl));
     _channel!.sink.add(jsonEncode({
       'type': 'subscribeFleet',
@@ -70,6 +73,7 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
     }));
 
     _channel!.stream.listen((message) {
+      if (!mounted) return;
       final decoded = jsonDecode(message);
       if (decoded['type'] == 'vehicleUpdate') {
          final data = decoded['data'];
@@ -129,6 +133,8 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
             }
          });
       }
+    }, onError: (e) {
+      debugPrint('Fleet admin WebSocket error: $e');
     });
   }
 

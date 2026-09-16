@@ -93,8 +93,11 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
     setState(() => _isSharing = true);
   }
 
-  void _stopSharing() {
+  /// Tears down the location stream and socket. Safe to call from dispose(),
+  /// because it never touches setState().
+  void _teardownSharing() {
     _positionStream?.cancel();
+    _positionStream = null;
     if (_channel != null && _vehicleData != null) {
       _channel!.sink.add(jsonEncode({
         'type': 'stopVehicle',
@@ -103,12 +106,16 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
       _channel!.sink.close();
       _channel = null;
     }
+  }
+
+  void _stopSharing() {
+    _teardownSharing();
     setState(() => _isSharing = false);
   }
 
   @override
   void dispose() {
-    _stopSharing();
+    _teardownSharing();
     super.dispose();
   }
 

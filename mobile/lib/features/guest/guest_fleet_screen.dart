@@ -69,6 +69,7 @@ class _GuestFleetScreenState extends State<GuestFleetScreen> {
     }));
 
     _channel!.stream.listen((message) {
+      if (!mounted) return;
       final decoded = jsonDecode(message);
       if (decoded['type'] == 'vehicleUpdate') {
          final data = decoded['data'];
@@ -119,6 +120,8 @@ class _GuestFleetScreenState extends State<GuestFleetScreen> {
             }
          });
       }
+    }, onError: (e) {
+      debugPrint('Guest fleet WebSocket error: $e');
     });
   }
 

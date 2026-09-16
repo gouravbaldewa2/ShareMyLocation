@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/router.dart';
 import 'core/share_manager.dart';
 import 'core/fleet_manager.dart';
-import 'core/models.dart';
 import 'core/widgets/glass_card.dart';
 import 'features/share/my_shares_screen.dart';
 import 'features/fleet/my_fleets_screen.dart';
@@ -142,7 +141,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
            if (uri.queryParameters.containsKey('fleetCode')) {
               final code = uri.queryParameters['fleetCode'];
               if (code != null && code.isNotEmpty && mounted) {
-                 context.push('/guest_fleet/$code');
+                 context.push('/fleet/$code');
               }
            } else if (uri.queryParameters.containsKey('shareCode')) {
               final code = uri.queryParameters['shareCode'];

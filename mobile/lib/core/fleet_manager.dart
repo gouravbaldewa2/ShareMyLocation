@@ -14,7 +14,10 @@ class FleetManager {
     
     // Convert current map to add new one
     final mapList = jsonList.map((e) => jsonDecode(e) as Map<String, dynamic>).toList();
-    
+
+    // Avoid duplicates
+    mapList.removeWhere((e) => e['adminCode'] == adminCode);
+
     mapList.add({
       'id': id,
       'adminCode': adminCode,

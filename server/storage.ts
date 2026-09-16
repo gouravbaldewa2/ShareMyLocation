@@ -26,6 +26,7 @@ export interface IStorage {
   getLocation(id: string): Promise<Location | undefined>;
   createLocation(location: InsertLocation): Promise<Location>;
   updateLocation(id: string, update: LocationUpdate): Promise<Location | undefined>;
+  setLocationLiveStatus(id: string, isLive: boolean): Promise<Location | undefined>;
   deleteLocation(id: string): Promise<boolean>;
 
   // Fleet methods
@@ -129,6 +130,20 @@ export class MemStorage implements IStorage {
     return updatedLocation;
   }
 
+  async setLocationLiveStatus(id: string, isLive: boolean): Promise<Location | undefined> {
+    const location = await this.getLocation(id);
+    if (!location) return undefined;
+
+    const updatedLocation: Location = {
+      ...location,
+      isLive,
+      lastUpdated: new Date().toISOString(),
+    };
+
+    this.locations.set(id, updatedLocation);
+    return updatedLocation;
+  }
+
   async deleteLocation(id: string): Promise<boolean> {
     return this.locations.delete(id);
   }
@@ -201,7 +216,14 @@ export class MemStorage implements IStorage {
 
   // Vehicle methods
   async getVehicle(id: string): Promise<Vehicle | undefined> {
-    return this.vehicles.get(id);
+    const vehicle = this.vehicles.get(id);
+    if (!vehicle) return undefined;
+
+    // getFleet purges the vehicles of an expired fleet, so this also cleans up
+    const fleet = await this.getFleet(vehicle.fleetId);
+    if (!fleet) return undefined;
+
+    return vehicle;
   }
 
   async getVehicleByShareCode(shareCode: string): Promise<Vehicle | undefined> {

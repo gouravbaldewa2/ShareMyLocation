@@ -10,15 +10,21 @@ import {
   vehicleUpdateSchema
 } from "@shared/schema";
 import { log } from "./index";
-import { requireAuth } from "./auth";
+
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 // Track WebSocket connections by location ID
 const locationSubscribers = new Map<string, Set<WebSocket>>();
-const sharerConnections = new Map<string, WebSocket>();
 
 // Track WebSocket connections for fleets
 const fleetSubscribers = new Map<string, Set<WebSocket>>();
-const vehicleSharerConnections = new Map<string, WebSocket>();
 
 export async function registerRoutes(
   httpServer: Server,
@@ -28,9 +34,11 @@ export async function registerRoutes(
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
 
   wss.on("connection", (ws) => {
-    let subscribedLocationId: string | null = null;
+    // A socket may subscribe more than once; track every subscription it holds
+    // so none of them is stranded in a Set when the socket closes.
+    const subscribedLocationIds = new Set<string>();
+    const subscribedFleetIds = new Set<string>();
     let sharingLocationId: string | null = null;
-    let subscribedFleetId: string | null = null;
     let sharingVehicleId: string | null = null;
 
     ws.on("message", async (data) => {
@@ -40,7 +48,7 @@ export async function registerRoutes(
         if (message.type === "subscribe" && message.locationId) {
           // Viewer subscribing to location updates
           const locId: string = message.locationId;
-          subscribedLocationId = locId;
+          subscribedLocationIds.add(locId);
 
           if (!locationSubscribers.has(locId)) {
             locationSubscribers.set(locId, new Set());
@@ -58,7 +66,6 @@ export async function registerRoutes(
           // Sharer starting to broadcast
           const locId: string = message.locationId;
           sharingLocationId = locId;
-          sharerConnections.set(locId, ws);
           log(`Sharer started broadcasting location ${locId}`, "websocket");
         } else if (message.type === "update" && sharingLocationId) {
           // Sharer sending location update
@@ -79,14 +86,8 @@ export async function registerRoutes(
             });
           }
         } else if (message.type === "stop" && sharingLocationId) {
-          // Sharer stopped sharing
-          const location = await storage.getLocation(sharingLocationId);
-          if (location) {
-            await storage.updateLocation(sharingLocationId, {
-              latitude: location.latitude,
-              longitude: location.longitude,
-            });
-          }
+          // Sharer stopped sharing — the location is no longer live
+          await storage.setLocationLiveStatus(sharingLocationId, false);
 
           // Notify subscribers
           const subscribers = locationSubscribers.get(sharingLocationId);
@@ -99,14 +100,13 @@ export async function registerRoutes(
             });
           }
 
-          sharerConnections.delete(sharingLocationId);
           sharingLocationId = null;
         }
 
         // Fleet-related messages
         else if (message.type === "subscribeFleet" && message.fleetId) {
           const fleetId: string = message.fleetId;
-          subscribedFleetId = fleetId;
+          subscribedFleetIds.add(fleetId);
 
           if (!fleetSubscribers.has(fleetId)) {
             fleetSubscribers.set(fleetId, new Set());
@@ -122,7 +122,6 @@ export async function registerRoutes(
           // Vehicle driver starting to broadcast
           const vehicleId: string = message.vehicleId;
           sharingVehicleId = vehicleId;
-          vehicleSharerConnections.set(vehicleId, ws);
 
           // Mark vehicle as live
           await storage.updateVehicleLiveStatus(vehicleId, true);
@@ -165,7 +164,6 @@ export async function registerRoutes(
             }
           }
 
-          vehicleSharerConnections.delete(sharingVehicleId);
           sharingVehicleId = null;
         }
       } catch (error) {
@@ -175,19 +173,21 @@ export async function registerRoutes(
 
     ws.on("close", async () => {
       // Clean up subscriber
-      if (subscribedLocationId) {
-        const subscribers = locationSubscribers.get(subscribedLocationId);
+      for (const locId of Array.from(subscribedLocationIds)) {
+        const subscribers = locationSubscribers.get(locId);
         if (subscribers) {
           subscribers.delete(ws);
           if (subscribers.size === 0) {
-            locationSubscribers.delete(subscribedLocationId);
+            locationSubscribers.delete(locId);
           }
         }
       }
 
       // Clean up sharer and notify subscribers
       if (sharingLocationId) {
-        sharerConnections.delete(sharingLocationId);
+        // A dropped sharer connection ends the live share just like an explicit stop
+        await storage.setLocationLiveStatus(sharingLocationId, false);
+
         const subscribers = locationSubscribers.get(sharingLocationId);
         if (subscribers) {
           const stopMessage = JSON.stringify({ type: "stopped" });
@@ -200,13 +200,13 @@ export async function registerRoutes(
         log(`Sharer disconnected from location ${sharingLocationId}`, "websocket");
       }
 
-      // Clean up fleet subscriber
-      if (subscribedFleetId) {
-        const subscribers = fleetSubscribers.get(subscribedFleetId);
+      // Clean up fleet subscribers
+      for (const fleetId of Array.from(subscribedFleetIds)) {
+        const subscribers = fleetSubscribers.get(fleetId);
         if (subscribers) {
           subscribers.delete(ws);
           if (subscribers.size === 0) {
-            fleetSubscribers.delete(subscribedFleetId);
+            fleetSubscribers.delete(fleetId);
           }
         }
       }
@@ -228,7 +228,6 @@ export async function registerRoutes(
             });
           }
         }
-        vehicleSharerConnections.delete(sharingVehicleId);
         log(`Vehicle ${sharingVehicleId} disconnected`, "websocket");
       }
     });
@@ -250,7 +249,9 @@ export async function registerRoutes(
 
   // Deep Link Web Fallback for /share/:code
   app.get("/share/:code", (req: Request, res: Response) => {
-    const code = req.params.code;
+    // The code is attacker-controlled: percent-encode it for the URL it lands in,
+    // then escape what remains so it cannot break out of the href attribute.
+    const code = escapeHtmlAttribute(encodeURIComponent(req.params.code as string));
     res.send(`
       <!DOCTYPE html>
       <html>
@@ -332,7 +333,7 @@ export async function registerRoutes(
     }
   });
 
-  // Fleet routes — requires login to create
+  // Fleet routes
   app.post("/api/fleets", async (req, res) => {
     try {
       const parsed = insertFleetSchema.safeParse(req.body);
