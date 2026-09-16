@@ -1,3 +1,20 @@
 {
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "automatic",
+
+    // Flutter ships its own gradle-wrapper.jar (bin/cache/artifacts/gradle_wrapper),
+    // which is not an official Gradle release jar, so the Java extension does not
+    // trust it and silently falls back to its bundled Gradle 8.9 — failing with
+    // "Minimum supported Gradle version is 8.13" against AGP 8.11.1.
+    // Trusting the checksum makes it use the wrapper's Gradle 8.14, the same
+    // version `flutter build` uses.
+    // NOTE: this checksum is tied to the Flutter SDK version. If a Flutter upgrade
+    // changes the wrapper jar, re-run:
+    //   shasum -a 256 mobile/android/gradle/wrapper/gradle-wrapper.jar
+    "java.import.gradle.wrapper.enabled": true,
+    "java.imports.gradle.wrapper.checksums": [
+        {
+            "sha256": "16caeaf66d57a0d1d2087fef6a97efa62de8da69afa5b908f40db35afc4342da",
+            "allowed": true
+        }
+    ]
 }
