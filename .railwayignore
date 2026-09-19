@@ -3,3 +3,17 @@
 .env.development
 node_modules/
 dist/
+
+# The Railway service only builds and runs the web server (client, server,
+# shared, script). Everything below is either rebuilt during the build or
+# belongs to the Flutter app, and uploading it made the deploy context 6.6GB.
+mobile/
+.venv/
+.npm-cache/
+.git/
+*.bundle
+screenshots/
+play_store_screenshots/
+.vscode/
+.DS_Store
+*.swp
