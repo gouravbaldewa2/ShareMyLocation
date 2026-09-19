@@ -63,9 +63,12 @@ export async function registerRoutes(
             ws.send(JSON.stringify({ type: "location", data: location }));
           }
         } else if (message.type === "share" && message.locationId) {
-          // Sharer starting to broadcast
+          // Sharer starting to broadcast. A dropped connection marks the share
+          // not-live, so a reconnecting sharer has to restore that flag here or
+          // a brief network blip would retire the share permanently.
           const locId: string = message.locationId;
           sharingLocationId = locId;
+          await storage.setLocationLiveStatus(locId, true);
           log(`Sharer started broadcasting location ${locId}`, "websocket");
         } else if (message.type === "update" && sharingLocationId) {
           // Sharer sending location update

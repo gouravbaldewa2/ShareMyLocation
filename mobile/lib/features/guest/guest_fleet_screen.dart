@@ -1,14 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api.dart';
 import '../../core/map_config.dart';
+import '../../core/reconnecting_socket.dart';
 import '../../core/models.dart';
 import '../../core/widgets/pulsing_dot.dart';
 
@@ -26,7 +25,7 @@ class _GuestFleetScreenState extends State<GuestFleetScreen> {
   
   FleetModel? _fleet;
   bool _isLoading = true;
-  WebSocketChannel? _channel;
+  ReconnectingSocket? _socket;
   LatLng _initialCenter = MapConfig.fallbackCenter;
 
   @override
@@ -62,72 +61,71 @@ class _GuestFleetScreenState extends State<GuestFleetScreen> {
   void _connectWebSocket() {
     if (_fleet == null) return;
     
-    _channel = WebSocketChannel.connect(Uri.parse(ApiClient.wsUrl));
-    _channel!.sink.add(jsonEncode({
-      'type': 'subscribeFleet',
-      'fleetId': _fleet!.id,
-    }));
-
-    _channel!.stream.listen((message) {
-      if (!mounted) return;
-      final decoded = jsonDecode(message);
-      if (decoded['type'] == 'vehicleUpdate') {
-         final data = decoded['data'];
-         setState(() {
-            final idx = _fleet!.vehicles.indexWhere((v) => v.id == data['id']);
-            if (idx != -1) {
-               final v = _fleet!.vehicles[idx];
-               if (data['latitude'] != null) v.latitude = (data['latitude'] as num).toDouble();
-               if (data['longitude'] != null) v.longitude = (data['longitude'] as num).toDouble();
-               if (data['isLive'] != null) v.isLive = data['isLive'];
-               if (data['lastUpdated'] != null) v.lastUpdated = DateTime.parse(data['lastUpdated']).toLocal();
-               
-               if (_fleet!.vehicles.where((v) => v.isLive).length == 1 && mounted && v.latitude != null && v.longitude != null) {
-                  _mapController.move(LatLng(v.latitude!, v.longitude!), 14);
-               }
-            }
-         });
-      } else if (decoded['type'] == 'vehicles') {
-         final List vehicles = decoded['data'];
-         setState(() {
-           bool autoPan = false;
-           LatLng? panTarget;
-           for (var vData in vehicles) {
-              final idx = _fleet!.vehicles.indexWhere((v) => v.id == vData['id']);
+    // Re-subscribing replays the full vehicle list, so a reconnect resyncs.
+    _socket = ReconnectingSocket(
+      registration: {
+        'type': 'subscribeFleet',
+        'fleetId': _fleet!.id,
+      },
+      onMessage: (decoded) {
+        if (!mounted) return;
+        if (decoded['type'] == 'vehicleUpdate') {
+           final data = decoded['data'];
+           setState(() {
+              final idx = _fleet!.vehicles.indexWhere((v) => v.id == data['id']);
               if (idx != -1) {
                  final v = _fleet!.vehicles[idx];
-                 if (vData['latitude'] != null) v.latitude = (vData['latitude'] as num).toDouble();
-                 if (vData['longitude'] != null) v.longitude = (vData['longitude'] as num).toDouble();
-                 if (vData['isLive'] != null) v.isLive = vData['isLive'];
-                 if (vData['lastUpdated'] != null) v.lastUpdated = DateTime.parse(vData['lastUpdated']).toLocal();
-                 
-                 if (v.isLive && v.latitude != null && panTarget == null) {
-                    panTarget = LatLng(v.latitude!, v.longitude!);
-                    autoPan = true;
+                 if (data['latitude'] != null) v.latitude = (data['latitude'] as num).toDouble();
+                 if (data['longitude'] != null) v.longitude = (data['longitude'] as num).toDouble();
+                 if (data['isLive'] != null) v.isLive = data['isLive'];
+                 if (data['lastUpdated'] != null) v.lastUpdated = DateTime.parse(data['lastUpdated']).toLocal();
+               
+                 if (_fleet!.vehicles.where((v) => v.isLive).length == 1 && mounted && v.latitude != null && v.longitude != null) {
+                    _mapController.move(LatLng(v.latitude!, v.longitude!), 14);
                  }
               }
-           }
-           if (autoPan && mounted && panTarget != null) {
-              _mapController.move(panTarget, 14);
-           }
-         });
-      } else if (decoded['type'] == 'vehicleStopped') {
-         setState(() {
-            final id = decoded['data']['vehicleId'];
-            final idx = _fleet!.vehicles.indexWhere((v) => v.id == id);
-            if (idx != -1) {
-               _fleet!.vehicles[idx].isLive = false;
-            }
-         });
-      }
-    }, onError: (e) {
-      debugPrint('Guest fleet WebSocket error: $e');
-    });
+           });
+        } else if (decoded['type'] == 'vehicles') {
+           final List vehicles = decoded['data'];
+           setState(() {
+             bool autoPan = false;
+             LatLng? panTarget;
+             for (var vData in vehicles) {
+                final idx = _fleet!.vehicles.indexWhere((v) => v.id == vData['id']);
+                if (idx != -1) {
+                   final v = _fleet!.vehicles[idx];
+                   if (vData['latitude'] != null) v.latitude = (vData['latitude'] as num).toDouble();
+                   if (vData['longitude'] != null) v.longitude = (vData['longitude'] as num).toDouble();
+                   if (vData['isLive'] != null) v.isLive = vData['isLive'];
+                   if (vData['lastUpdated'] != null) v.lastUpdated = DateTime.parse(vData['lastUpdated']).toLocal();
+                 
+                   if (v.isLive && v.latitude != null && panTarget == null) {
+                      panTarget = LatLng(v.latitude!, v.longitude!);
+                      autoPan = true;
+                   }
+                }
+             }
+             if (autoPan && mounted && panTarget != null) {
+                _mapController.move(panTarget, 14);
+             }
+           });
+        } else if (decoded['type'] == 'vehicleStopped') {
+           setState(() {
+              final id = decoded['data']['vehicleId'];
+              final idx = _fleet!.vehicles.indexWhere((v) => v.id == id);
+              if (idx != -1) {
+                 _fleet!.vehicles[idx].isLive = false;
+              }
+           });
+        }
+      },
+    );
+    _socket!.connect();
   }
 
   @override
   void dispose() {
-    _channel?.sink.close();
+    _socket?.dispose();
     super.dispose();
   }
 

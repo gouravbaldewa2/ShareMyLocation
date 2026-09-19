@@ -8,14 +8,12 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 
-import 'dart:convert';
-
 import 'package:geolocator/geolocator.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../core/api.dart';
 import '../../core/location_service.dart';
 import '../../core/map_config.dart';
+import '../../core/reconnecting_socket.dart';
 import '../../core/share_manager.dart';
 
 class SharingActiveScreen extends StatefulWidget {
@@ -39,7 +37,9 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
   
   LatLng? _currentPosition;
   StreamSubscription<Position>? _locationSub;
-  WebSocketChannel? _channel;
+  ReconnectingSocket? _socket;
+  SocketStatus _socketStatus = SocketStatus.closed;
+  Position? _lastPosition;
 
   String get _shareUrl => '${ApiClient.baseUrl}/view/${widget.locationId}';
 
@@ -78,43 +78,61 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
   }
 
   void _connectWebSocket() {
-    _channel = WebSocketChannel.connect(Uri.parse(ApiClient.wsUrl));
-    _channel!.sink.add(jsonEncode({
-      'type': 'share',
-      'locationId': widget.locationId,
-    }));
+    _socket = ReconnectingSocket(
+      registration: {
+        'type': 'share',
+        'locationId': widget.locationId,
+      },
+      onStatusChange: (status) {
+        if (mounted) setState(() => _socketStatus = status);
+      },
+      // The new connection starts with no position, so push the latest one
+      // straight away rather than waiting for the next movement.
+      onReconnected: () {
+        final position = _lastPosition;
+        if (position != null) _sendLocationUpdate(position);
+      },
+    );
+    _socket!.connect();
   }
 
   void _sendLocationUpdate(Position position) {
-    if (_channel != null) {
-      _channel!.sink.add(jsonEncode({
-        'type': 'update',
-        'data': {
-          'latitude': position.latitude,
-          'longitude': position.longitude,
-        },
-      }));
-    }
+    _lastPosition = position;
+    _socket?.send({
+      'type': 'update',
+      'data': {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+      },
+    });
   }
 
   @override
   void dispose() {
     _locationSub?.cancel();
-    if (widget.isLive) {
-      _channel?.sink.close();
-    }
+    _socket?.dispose();
     super.dispose();
   }
 
   Future<void> _stopSharing() async {
     try {
       _locationSub?.cancel();
-      _channel?.sink.close();
+      _socket?.dispose(farewell: {'type': 'stop'});
       await _apiClient.deleteLocation(widget.locationId);
       await _shareManager.removeShare(widget.locationId);
     } catch (_) {}
     if (mounted) context.pop();
   }
+
+  /// Only meaningful for a live share; a one-off share has no socket.
+  bool get _isReconnecting =>
+      widget.isLive && _socketStatus != SocketStatus.connected;
+
+  String get _sharingStatusLabel =>
+      _isReconnecting ? 'Reconnecting\u2026' : 'Sharing Active';
+
+  Color get _sharingStatusColor =>
+      _isReconnecting ? const Color(0xFFF39C12) : const Color(0xFF2ECC71);
 
   void _shareLinkNative() {
     Share.share('Track my location live on Orbit! $_shareUrl', subject: 'My Location on Orbit');
@@ -213,15 +231,15 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
                           Container(
                             width: 10,
                             height: 10,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF2ECC71),
+                            decoration: BoxDecoration(
+                              color: _sharingStatusColor,
                               shape: BoxShape.circle,
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
-                            'Sharing Active',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                          Text(
+                            _sharingStatusLabel,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                         ],
                       ),

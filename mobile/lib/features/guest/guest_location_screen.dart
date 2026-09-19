@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:go_router/go_router.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:http/http.dart' as http;
 import '../../core/api.dart';
 import '../../core/map_config.dart';
+import '../../core/reconnecting_socket.dart';
 
 class GuestLocationScreen extends StatefulWidget {
   final String locationId;
@@ -20,7 +20,7 @@ class GuestLocationScreen extends StatefulWidget {
 class _GuestLocationScreenState extends State<GuestLocationScreen> {
   final MapController _mapController = MapController();
   LatLng? _currentPosition;
-  WebSocketChannel? _channel;
+  ReconnectingSocket? _socket;
   bool _isLoading = true;
   String _name = 'Unknown';
   bool _isLive = false;
@@ -58,38 +58,34 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
   }
 
   void _connectWebSocket() {
-    _channel = WebSocketChannel.connect(Uri.parse(ApiClient.wsUrl));
-    
-    _channel!.sink.add(jsonEncode({
-      'type': 'subscribe',
-      'locationId': widget.locationId,
-    }));
-
-    _channel!.stream.listen((message) {
-      final data = jsonDecode(message);
-      if (data['type'] == 'location' && data['data'] != null) {
-        final locData = data['data'];
-        if (mounted) {
+    // On every (re)connect the server replays the current location for this
+    // subscription, so a dropped viewer heals itself with no extra work here.
+    _socket = ReconnectingSocket(
+      registration: {
+        'type': 'subscribe',
+        'locationId': widget.locationId,
+      },
+      onMessage: (data) {
+        if (!mounted) return;
+        if (data['type'] == 'location' && data['data'] != null) {
+          final locData = data['data'];
           setState(() {
             _currentPosition = LatLng(
               (locData['latitude'] as num).toDouble(),
               (locData['longitude'] as num).toDouble(),
             );
           });
-        }
-      } else if (data['type'] == 'stopped') {
-        if (mounted) {
+        } else if (data['type'] == 'stopped') {
           setState(() => _isLive = false);
         }
-      }
-    }, onError: (e) {
-      debugPrint('WebSocket error: $e');
-    });
+      },
+    );
+    _socket!.connect();
   }
 
   @override
   void dispose() {
-    _channel?.sink.close();
+    _socket?.dispose();
     super.dispose();
   }
 

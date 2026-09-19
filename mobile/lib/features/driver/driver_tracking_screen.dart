@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/api.dart';
 import '../../core/location_service.dart';
+import '../../core/reconnecting_socket.dart';
 
 class DriverTrackingScreen extends StatefulWidget {
   final String code;
@@ -22,7 +21,9 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
   bool _isLoading = true;
   bool _isSharing = false;
   
-  WebSocketChannel? _channel;
+  ReconnectingSocket? _socket;
+  SocketStatus _socketStatus = SocketStatus.closed;
+  Position? _lastPosition;
   StreamSubscription<Position>? _positionStream;
 
   @override
@@ -62,35 +63,44 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
   void _startSharing(Position initialPosition) {
     if (_vehicleData == null) return;
     final vehicleId = _vehicleData!['vehicle']['id'];
+    _lastPosition = initialPosition;
 
-    _channel = WebSocketChannel.connect(Uri.parse(ApiClient.wsUrl));
-    _channel!.sink.add(jsonEncode({
-      'type': 'shareVehicle',
-      'vehicleId': vehicleId,
-    }));
-
-    // Send the first location immediately so viewers don't have to wait for movement
-    _channel!.sink.add(jsonEncode({
-      'type': 'updateVehicle',
-      'data': {
-        'latitude': initialPosition.latitude,
-        'longitude': initialPosition.longitude,
-      }
-    }));
+    _socket = ReconnectingSocket(
+      registration: {
+        'type': 'shareVehicle',
+        'vehicleId': vehicleId,
+      },
+      onStatusChange: (status) {
+        if (mounted) setState(() => _socketStatus = status);
+      },
+      // shareVehicle re-marks the vehicle live on the server; follow it with the
+      // latest fix so the fleet map isn't left on a stale position.
+      onReconnected: () {
+        final position = _lastPosition;
+        if (position != null) _sendVehicleUpdate(position);
+      },
+    );
+    _socket!.connect().then((_) {
+      // Send the first location immediately so viewers don't have to wait for movement
+      _sendVehicleUpdate(initialPosition);
+    });
 
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.bestForNavigation, distanceFilter: 5),
-    ).listen((Position position) {
-      _channel?.sink.add(jsonEncode({
-        'type': 'updateVehicle',
-        'data': {
-          'latitude': position.latitude,
-          'longitude': position.longitude,
-        }
-      }));
-    });
+    ).listen(_sendVehicleUpdate);
 
     setState(() => _isSharing = true);
+  }
+
+  void _sendVehicleUpdate(Position position) {
+    _lastPosition = position;
+    _socket?.send({
+      'type': 'updateVehicle',
+      'data': {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+      }
+    });
   }
 
   /// Tears down the location stream and socket. Safe to call from dispose(),
@@ -98,13 +108,13 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
   void _teardownSharing() {
     _positionStream?.cancel();
     _positionStream = null;
-    if (_channel != null && _vehicleData != null) {
-      _channel!.sink.add(jsonEncode({
+    if (_socket != null && _vehicleData != null) {
+      _socket!.dispose(farewell: {
         'type': 'stopVehicle',
         'vehicleId': _vehicleData!['vehicle']['id'],
-      }));
-      _channel!.sink.close();
-      _channel = null;
+      });
+      _socket = null;
+      _socketStatus = SocketStatus.closed;
     }
   }
 
@@ -117,6 +127,14 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
   void dispose() {
     _teardownSharing();
     super.dispose();
+  }
+
+  String get _driverStatusLabel {
+    if (!_isSharing) return 'You are not sharing your location';
+    if (_socketStatus != SocketStatus.connected) {
+      return '\u26a0\ufe0f Reconnecting\u2026 your location is not updating';
+    }
+    return '📡 Live — your location is being shared';
   }
 
   @override
@@ -177,7 +195,7 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
             ),
             const SizedBox(height: 64),
             Text(
-              _isSharing ? '📡 Live — your location is being shared' : 'You are not sharing your location',
+              _driverStatusLabel,
               style: const TextStyle(color: Colors.grey),
             ),
           ],
