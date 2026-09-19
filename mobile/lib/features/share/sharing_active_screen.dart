@@ -160,7 +160,7 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
               TileLayer(
                 urlTemplate: MapConfig.tileUrl,
                 fallbackUrl: MapConfig.fallbackTileUrl,
-                userAgentPackageName: 'com.sharemylocation.app',
+                userAgentPackageName: 'com.sharemyloc.app',
                 tileProvider: NetworkTileProvider(),
               ),
               if (_currentPosition != null) MarkerLayer(

@@ -342,7 +342,7 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
                     TileLayer(
                       urlTemplate: MapConfig.tileUrl,
                       fallbackUrl: MapConfig.fallbackTileUrl,
-                      userAgentPackageName: 'com.sharemylocation.app',
+                      userAgentPackageName: 'com.sharemyloc.app',
                     ),
                     MarkerLayer(
                       markers: _fleet!.vehicles

@@ -242,7 +242,7 @@ export async function registerRoutes(
       relation: ["delegate_permission/common.handle_all_urls"],
       target: {
         namespace: "android_app",
-        package_name: "com.sharemylocation.app",
+        package_name: "com.sharemyloc.app",
         sha256_cert_fingerprints: [
           "23:7F:3E:DD:0F:28:C0:27:A5:0C:2D:9A:DF:F8:42:52:D8:41:F5:CE:EE:B9:04:FB:83:DF:05:3A:B5:8F:82:BA"
         ]
@@ -277,7 +277,7 @@ export async function registerRoutes(
         <div class="container">
           <h1>Orbit</h1>
           <p>You've been invited to track a fleet's live location. Install Orbit to join.</p>
-          <a class="btn" href="https://play.google.com/store/apps/details?id=com.sharemylocation.app&referrer=fleetCode%3D${code}">
+          <a class="btn" href="https://play.google.com/store/apps/details?id=com.sharemyloc.app&referrer=fleetCode%3D${code}">
             Download Orbit
           </a>
         </div>

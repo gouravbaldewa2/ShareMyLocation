@@ -107,7 +107,7 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
               TileLayer(
                 urlTemplate: MapConfig.tileUrl,
                 fallbackUrl: MapConfig.fallbackTileUrl,
-                userAgentPackageName: 'com.sharemylocation.app',
+                userAgentPackageName: 'com.sharemyloc.app',
               ),
               MarkerLayer(
                 markers: [
