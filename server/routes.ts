@@ -244,7 +244,7 @@ export async function registerRoutes(
         namespace: "android_app",
         package_name: "com.sharemyloc.app",
         sha256_cert_fingerprints: [
-          "23:7F:3E:DD:0F:28:C0:27:A5:0C:2D:9A:DF:F8:42:52:D8:41:F5:CE:EE:B9:04:FB:83:DF:05:3A:B5:8F:82:BA"
+          "73:56:A6:11:A9:B1:A8:B5:2F:83:6F:97:34:B5:72:DF:96:3A:F0:C2:4C:50:FF:EA:01:01:CF:1B:90:24:3D:B9"
         ]
       }
     }]);
