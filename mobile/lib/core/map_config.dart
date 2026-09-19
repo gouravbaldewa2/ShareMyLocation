@@ -11,17 +11,27 @@ class MapConfig {
   static const String _mapTilerKey =
       String.fromEnvironment('MAPTILER_KEY', defaultValue: '');
 
-  /// MapTiler Streets — colorful, detailed, Google Maps-like aesthetic.
-  /// If the 100K loads/month quota is hit, or no key is provided, swap to [fallbackTileUrl].
+  /// MapTiler Streets, used only when a key is supplied at build time.
+  /// With no key this resolves to [fallbackTileUrl], so both slots are the same source.
   static final String tileUrl = _mapTilerKey.isNotEmpty
       ? 'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=$_mapTilerKey'
       : fallbackTileUrl;
 
-  /// CARTO Voyager — free, no API key, no quota. Use this if MapTiler quota is exhausted.
+  /// OpenStreetMap standard tiles. No key, no signup.
+  ///
+  /// This replaced CARTO Voyager, which was chosen as a keyless fallback but now
+  /// stamps "API KEY REQUIRED" across every tile it serves, so it is no longer
+  /// usable without an account.
+  ///
+  /// The OSM Foundation's tile policy only covers light use, so this is a stopgap:
+  /// supply MAPTILER_KEY at build time before this reaches any real volume.
   static const String fallbackTileUrl =
-      'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-  static const String tileAttribution = '© MapTiler © OpenStreetMap contributors';
+  /// Both providers require this to be visible on the map, not just defined here.
+  static final String tileAttribution = _mapTilerKey.isNotEmpty
+      ? '© MapTiler © OpenStreetMap contributors'
+      : '© OpenStreetMap contributors';
 
   /// Fallback centre when device location is unavailable (Mumbai).
   static const LatLng fallbackCenter = LatLng(19.0760, 72.8777);

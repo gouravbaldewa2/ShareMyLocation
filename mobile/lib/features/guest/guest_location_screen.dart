@@ -109,6 +109,11 @@ class _GuestLocationScreenState extends State<GuestLocationScreen> {
                 fallbackUrl: MapConfig.fallbackTileUrl,
                 userAgentPackageName: 'com.sharemyloc.app',
               ),
+              RichAttributionWidget(
+                attributions: [
+                  TextSourceAttribution(MapConfig.tileAttribution),
+                ],
+              ),
               MarkerLayer(
                 markers: [
                   Marker(

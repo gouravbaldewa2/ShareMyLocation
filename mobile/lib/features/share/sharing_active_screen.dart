@@ -163,6 +163,11 @@ class _SharingActiveScreenState extends State<SharingActiveScreen> {
                 userAgentPackageName: 'com.sharemyloc.app',
                 tileProvider: NetworkTileProvider(),
               ),
+              RichAttributionWidget(
+                attributions: [
+                  TextSourceAttribution(MapConfig.tileAttribution),
+                ],
+              ),
               if (_currentPosition != null) MarkerLayer(
                 markers: [
                   Marker(

@@ -344,6 +344,11 @@ class _FleetAdminScreenState extends State<FleetAdminScreen> {
                       fallbackUrl: MapConfig.fallbackTileUrl,
                       userAgentPackageName: 'com.sharemyloc.app',
                     ),
+                    RichAttributionWidget(
+                      attributions: [
+                        TextSourceAttribution(MapConfig.tileAttribution),
+                      ],
+                    ),
                     MarkerLayer(
                       markers: _fleet!.vehicles
                         .where((v) => v.isLive && v.latitude != null && v.longitude != null)
